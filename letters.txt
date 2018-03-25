@@ -1,0 +1,30 @@
+A: 2, a: 1 | Au: 3, au: 2 | Ä: F3, Z4, ä: F2, Z3
+B: 2, b: 1
+C: 1, c: 1 | Ch: F2, Z3, ch: F2, Z3 | ck: F3 | chs: F3
+D: 2, d: 1
+E: F4, Z3, e: 1 | Ei: F6, Z5, ei: 3 | Eu: F6, Z4, eu: 2
+F: 3, f: 2
+G: F1, Z2: g: F1, Z2
+H: 3, h: F1, Z2
+I: 1, i: 2 | ie: F3
+J: 1, j: 2
+K: 2, k: 2
+L: 1, l: 1
+M: 1, m: F1, Z2
+N: 1, n: F1, Z2 | ng: F2 | nk: F3
+O: 1, o: 1 | Ö: F2, Z3, ö: F2, Z3
+P: 2, p: F1, Z2 | Pf: F4, pf: F3
+(Q: 2, q: 1) | Qu: 3, qu: 2
+R: 2, r: F1, Z2
+S: 1, s: 1 | Sch: F3, Z4, sch: F3, Z4 | St: F3, st: F3 | Sp: F2, sp: F2
+T: 2, t: 2 | tz: F3
+U: 1, u: 1 | Ü: F2, Z3, ü: F2, Z3
+V: 1, v: 1
+W: 1, w: 1
+X: 2, x: 2 (andere Reihenfolge)
+Y: 2, y: 2
+Z: 1, z: 1
+ß: 1
+
+F = Fibel
+Z = Zebra
