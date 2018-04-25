@@ -45,6 +45,16 @@ export default class Maths {
   }
 
   /**
+   * Calculates length of vector
+   *
+   * @param {number[]} v - array representing a vector in 2D
+   * @returns {number} length of given vector
+   */
+  static length(v) {
+    return Math.sqrt(v[0] * v[0] + v[1] * v[1])
+  }
+
+  /**
    * Calculates distance between two points
    *
    * @param {number[]} p0 - array representing a point in 2D
@@ -52,7 +62,7 @@ export default class Maths {
    * @returns {number} distance of p0 and p1
    */
   static distance(p0, p1) {
-    return Math.sqrt((p0[0] - p1[0]) * (p0[0] - p1[0]) * (p0[1] - p1[1]) * (p0[1] - p1[1]))
+    return Math.sqrt((p0[0] - p1[0]) * (p0[0] - p1[0]) + (p0[1] - p1[1]) * (p0[1] - p1[1]))
   }
 
   /**
@@ -72,5 +82,21 @@ export default class Maths {
     const t = Maths.dot(Maths.sub(p, p0), direction) / Maths.dot(direction, direction)
 
     return Maths.add(p0, Maths.mult(direction, t))
+  }
+
+  static calcRotationAngle(p0, p1) {
+    const d = this.sub(p1, p0)
+    const s = this.dot(d, [1, 0])
+    const cos = s / (this.length(d) * this.length([1, 0]))
+    const a = this.radToDeg(Math.acos(cos))
+    return d[1] > 0 ? a : -a
+  }
+
+  static radToDeg(rad) {
+    return rad * 180 / Math.PI
+  }
+
+  static equals(v0, v1) {
+    return v0[0] === v1[0] && v0[1] === v1[1]
   }
 }

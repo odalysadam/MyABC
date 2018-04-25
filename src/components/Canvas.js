@@ -1,36 +1,37 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, PanResponder } from 'react-native'
+import { View, StyleSheet, PanResponder, Animated } from 'react-native'
 import { Svg } from 'expo'
-const { G, Path, Circle, Text } = Svg
-// import { Svg, G, Path, Circle, Text } from 'react-native-svg'
 
 import Maths from '../util/Maths'
-import letters from '../logic/letters'
-import Letter from './Letter'
+import LetterTemplate from './LetterTemplate/LetterTemplate'
 
 export default class Canvas extends Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
 
     this.state = {
       points: [],         // stores coordinates of finger position, inspired by rn-draw
       strokes: [],        // stores lines drawn between points, inspired by rn-draw
-      shouldDraw: false,  // determines if finger movement should be drawn to the screen
-      // level: 0,           // active Level
-      // section: 0,         // active section of letter
-      // letter: letters['a_big'], // TODO think of better way to connect these components
-      // tolerance: 15, // tolerated distance
-      // errors: {
-      //   notFindingStart: 0,
-      //   notHittingLetter: 0,
-      //   drawingBackwards: 0,
-      //   didNotFinishSection: 0
-      // }
+      activeSection: 0,
+      activeSubsection: 0,
+      tolerance: props.tolerance,
+      distanceFromSubStart: null,         // used to validate direction
+      errors: {
+        TooFarFromStart: 0,
+        TooFarFromLine: 0,
+        WrongDirection: 0,
+        TooFarFromEnd: 0,
+        ReleasedAfterError: true,
+      },
+      blob: {
+        show: false,
+        pos: []
+      },
     }
   }
 
   /**
-   * setting up React Native PanResponder to track finger movement on screen, inspired by rn-draw
+   * setting up React Native PanResponder to track finger movement on screen
    */
   componentWillMount() {
     this.panResponder = PanResponder.create({
@@ -43,140 +44,177 @@ export default class Canvas extends Component {
   }
 
   /**
-   * This method is triggered, when the user touches the screen.
-   * It checks if the distance from starting point of active section to finger position is within the tolerated area.
-   * If distance is within tolerated area, it stores the finger position for drawing and resets the associated error count.
-   * Otherwise it increments the error count until the error occurred three times. When the error occurred three times the count
-   * will be reset and the starting point will be hinted.
+   * This method is triggered, when the user touches the screen. It checks if
+   * the finger position on screen is close enough to the active sections start point.
    */
-  onResponderGrant = (e, gestureState) => {
-    // const { points, tolerance, errors } = this.state
-    // const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
-    // const d = this.distanceToStart(fingerPos)
-    // console.log(d)
-    //
-    // // check if finger position is inside of tolerated distance of starting point
-    // if (d > tolerance) {
-    //   let errorCount = errors.notFindingStart
-    //   errorCount++
-    //   console.log(errorCount)
-    //
-    //   if (errorCount >= 3) {
-    //     // TODO highlight starting point
-    //     // this.setState({ shouldDraw: false, errors: { notFindingStart: errorCount}})
-    //   }
-    //
-    //   this.setState({ shouldDraw: false, errors: { notFindingStart: errorCount }})
-    // } else {
-    //   this.setState({ points: [...points, fingerPos], shouldDraw: true, errors: { notFindingStart: 0 }})
-    // }
+  onResponderGrant = e => {
+    const { activeSection, points, tolerance, errors } = this.state
+    const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
 
+    const start = Maths.mult(this.props.letterDef[activeSection][0][0], this.props.scale)
+    const d = Maths.distance(fingerPos, start)
+
+    if (d > tolerance) {
+      // TODO animate StartPoint with react-native.Animated
+      this.setState({ errors: { ...errors, TooFarFromStart: 1 } })
+    } else {
+      this.setState({ points: [...points, fingerPos], errors: { ...errors, TooFarFromStart: 0 } })
+    }
   }
 
-  // check if points are close enough to letter and if direction is correct
-  onResponderMove = (e, gestureState) => {
-    // const { shouldDraw, points, tolerance, errors } = this.state
+  onResponderMove = e => {
+    const { errors } =  this.state
+
+    // if user didn't find start before or didn't release
+    // screen after an error while moving occurred, don't go on
+    if (errors.TooFarFromStart > 0 || !errors.ReleasedAfterError) return
+
+    const { points, tolerance } = this.state
+    const activeSection = this.props.letterDef[this.state.activeSection]
+    const activeSubsection = activeSection[this.state.activeSubsection]
+    const { scale } = this.props
+    const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
+
+    // validate distance to activeSubsection, TestCase: Lines Only
+    const p0 = Maths.mult(activeSubsection[0], scale)
+    const p1 = Maths.mult(activeSubsection[1], scale)
+    const nearestPoint = Maths.nearestPointOnLine(fingerPos, p0, p1)
+    const d1 = Maths.distance(fingerPos, nearestPoint)
+
+    if (d1 > tolerance) {
+      // TODO show blob on fingerPos - this.setState({ blob: { show: true, pos: fingerPos }})
+      const tooFar = errors.TooFarFromLine + 1
+      this.setState({ errors: { ...errors, TooFarFromLine: tooFar, ReleasedAfterError: false } }, () => {
+        if (tooFar >= 3) {
+          if (this.props.tolerance === tolerance) {
+            this.setState({ tolerance: tolerance + 15 })  // TODO make it look smoothly with animation
+          }
+        }
+      })
+      return
+    }
+
+    // TODO THIS IS NOT WORKING PROPERLY WHEN SWITCHING SUBSECTIONS!!!!
+    // validate if finger is moving in right direction
+    // const oldD = this.state.distanceFromSubStart
+    // const start = Maths.mult(activeSubsection[0], scale)
+    // const d2 = Maths.distance(fingerPos, start)
     //
-    // // don't do anything if an error occurred before
-    // if (!shouldDraw) {
+    // if (oldD && d2 < oldD) {
+    //   const wd = errors.WrongDirection + 1
+    //   this.setState({ errors: { ...errors, WrongDirection: wd, ReleasedAfterError: false } }, () => {
+    //     if (wd >= 3) {
+    //       // TODO animate startpoint and/or highlight arrow by changing color (and changing color back)
+    //     }
+    //   })
     //   return
     // }
-    //
-    // const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
-    // const d = this.distanceToLine(fingerPos)
-    // console.log(fingerPos, d)
-    //
-    // // check if finger position is inside of tolerated distance
-    // if (d > tolerance) {
-    //   let errorCount = errors.notHittingLetter
-    //   errorCount++
-    //   console.log(errorCount)
-    //
-    //   if (errorCount >= 3) {
-    //     // TODO tolerance += 5|10|15|20
-    //     // this.setState({ shouldDraw: false, errors: { notFindingStart: errorCount}})
-    //   }
-    //
-    //   this.setState({ shouldDraw: false, errors: { notHittingLetter: errorCount }})
-    // } else {
-    //   this.setState({ points: [...points, fingerPos], shouldDraw: true, errors: { notHittingLetter: 0 }})
-    // }
+    // this.setState({ distanceFromSubStart: d2 })
+
+    // validate if finger is hitting end point of subsection, if so switch to next subsection
+    const end = Maths.mult(activeSubsection[1], scale)
+    const d3 = Maths.distance(fingerPos, end)
+
+    if (d3 <= tolerance) {
+      if (this.state.activeSubsection < activeSection.length - 1) {
+        this.setState({ activeSubsection: this.state.activeSubsection + 1, distanceFromSubStart: null })
+      }
+    }
+
+    this.setState({ points: [...points, fingerPos] })
+
+    // TODO think about deleting points and strokes immediately
   }
 
-  // draw
   onResponderRelease = (e, gestureState) => {
-    // const { points, strokes, section } = this.state
-    //
-    // // console.log(points)
-    // if (!points.length) return
-    //
-    // let stroke
-    //
-    // // draw a circle if user has just touched screen without moving
-    // if(points.length === 1) {
-    //   stroke = (
-    //     <Circle key={section} cx={points[0][0]} cy={points[0][1]} r='10' fill='#000000' /> // TODO adjust size
-    //   )
-    // } else {
-    //   stroke = (
-    //     <Path
-    //       key={section}
-    //       d={this.convertToPath(points)}
-    //       stroke='#000000'
-    //       strokeWidth={12}
-    //       strokeLinecap='round'
-    //       strokeLinejoin='round'
-    //       fill='none'
-    //     />
-    //   )
-    // }
+    const { errors } = this.state
+    this.setState({ distanceFromSubStart: null, activeSubsection: 0 })
 
-    // this.setState({
-    //   strokes: [...strokes, stroke],
-    //   points: [],
-    //   section: section + 1 // only update this when a subsection or section successfully ended
-    // })
+    if (errors.TooFarFromStart > 0) return
+    if (!errors.ReleasedAfterError) {
+      this.setState({
+        errors: {
+          ...errors,
+          ReleasedAfterError: true
+        },
+        points: [],
+        strokes: []
+      })
+      return
+    }
+
+    const { points, tolerance} = this.state
+    const activeSection = this.props.letterDef[this.state.activeSection]
+    const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
+
+    const end = Maths.mult(activeSection[activeSection.length - 1][1], this.props.scale)
+    const d = Maths.distance(fingerPos, end)
+    if (d > tolerance) {
+      // TODO animate EndPoint
+      this.setState({ points: [], strokes: [] })
+    } else {
+      this.setState({ points: [...points, fingerPos], activeSection: this.state.activeSection + 1 })
+    }
   }
 
   /**
-   * Creates a SVG Path out of points
+   * Creates a SVG Path string definition out of points
+   *
+   * @param {Array.<number[]>} - coordinates where screen was touched
+   * @returns {String} definition for SVG Path
    */
   convertToPath = points => {
     if (!points.length) return ''
+
+    // create path for a circle, if only one point is stored
+    if (points.length === 1) {
+      return `M${points[0][0] - 5} ${points[0][1]} a5 5 0 1,0 10,0 a5 5 0 1,0 -10,0`
+    }
+
+    // create full path
     return points.map((value, index) => {
-      if (index === 0) {
-        return `M${points[0][0]} ${points[0][1]}`
-      }
+      if (index === 0) return `M${points[0][0]} ${points[0][1]}`
+
       return `L${value[0]} ${value[1]}`
     }).join(' ')
   }
 
   render() {
-    const { shouldDraw, strokes, points, section, errors } = this.state
+    const { strokes, points, activeSection, tolerance, blob } = this.state
+    const { letterDef, scale, strokeColor } = this.props
     // console.log(this.state)
 
     return (
-      <View style={styles.container}>
-        <View {...this.panResponder.panHandlers} style={styles.svgContainer}>
-          <Svg style={styles.container}>
-            <Letter name='a_big' />
-            <G>
-              {strokes}
-              {shouldDraw &&
-                <Path
-                  key={section}
-                  d={this.convertToPath(points)}
-                  stroke='#000000'
-                  strokeWidth={12}
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  fill='none'
-                />
-              }
-            </G>
-            <Text x='50' y='450'>{errors.notFindingStart} {errors.notHittingLetter}</Text>
-          </Svg>
-        </View>
+      <View {...this.panResponder.panHandlers} style={styles.svgContainer}>
+        <Svg style={styles.container}>
+          <LetterTemplate
+            sections={letterDef}
+            activeSection={letterDef[activeSection]}
+            strokeWidth={tolerance}
+            scale={scale}
+          />
+          <Svg.G>
+            {strokes}
+              <Svg.Path
+                d={this.convertToPath(points)}
+                stroke={strokeColor}
+                strokeWidth={20}
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                fill='none'
+              />
+
+            {/*{blob.show &&*/}
+              {/*<Svg.Image*/}
+                {/*x={blob.pos[0] + 50}*/}
+                {/*y={blob.pos[1] + 50}*/}
+                {/*width={100}*/}
+                {/*height={100}*/}
+                {/*href={require('../../assets/blob.png')}*/}
+              {/*/>*/}
+            {/*}*/}
+          </Svg.G>
+        </Svg>
       </View>
     )
   }
@@ -188,6 +226,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2474a6'
   },
   svgContainer: {
-    flex: 1
+    flex: 1,
   },
 })
