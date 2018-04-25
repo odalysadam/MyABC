@@ -1,21 +1,20 @@
 {
   "expo": {
     "name": "MyABC",
-    "description": "This project is really great.",
-    "slug": "MyABC",
+    "description": "Prototype for an app teaching children to write letters",
+    "slug": "my-abc",
     "privacy": "public",
     "sdkVersion": "25.0.0",
-    "platforms": ["ios"],
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2474a6"
-    },
+    "platforms": ["ios"],
+    "orientation": "landscape",
     "ios": {
-      "supportsTablet": true
+      "icon": "./assets/icon.png",
+      "isTabletOnly": true,
+      "splash": {
+        "tabletImage": "./assets/loading_screen.png",
+        "backgroundColor": "#2474a6"
+      }
     }
   }
 }

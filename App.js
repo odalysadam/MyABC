@@ -1,17 +1,10 @@
 import React from 'react'
-import { StyleSheet } from 'react-native'
-import Canvas from './src/components/Canvas'
+import LetterScreen from './src/components/LetterScreen'
 
 export default class App extends React.Component {
   render() {
     return (
-      <Canvas />
+      <LetterScreen />
     )
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-})
