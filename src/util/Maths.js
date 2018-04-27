@@ -81,6 +81,8 @@ export default class Maths {
     // scalar parameter of nearest point
     const t = Maths.dot(Maths.sub(p, p0), direction) / Maths.dot(direction, direction)
 
+    if (t < -0.075 || t > 1.075) return null
+
     return Maths.add(p0, Maths.mult(direction, t))
   }
 

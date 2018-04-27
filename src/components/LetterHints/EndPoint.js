@@ -1,6 +1,9 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
 
+/**
+ * This component visualizes the end point of a section
+ */
 export default class EndPoint extends Component {
   render() {
     const { p, scale, strokeWidth } = this.props

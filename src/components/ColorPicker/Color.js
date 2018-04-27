@@ -1,16 +1,22 @@
 import React, { Component } from 'react'
 import { TouchableHighlight, Image } from 'react-native'
 
+/**
+ * This component defines a Button displayed as a color splash to change the stroke color.
+ */
 export default class Color extends Component {
   constructor() {
     super()
-
     this.state = {
       source: '',
       colorCode: ''
     }
   }
 
+  /**
+   * Triggered before component mounts.
+   * Links the color name to its related hex code and png.
+   */
   componentWillMount() {
     switch (this.props.color) {
       case 'red':
@@ -51,6 +57,9 @@ export default class Color extends Component {
     }
   }
 
+  /**
+   * Sends selected color code back to the ColorPicker
+   */
   onPress = () => {
     this.props.setColor(this.state.colorCode)
   }

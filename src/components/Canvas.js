@@ -1,21 +1,22 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, PanResponder, Animated } from 'react-native'
+import { View, StyleSheet, PanResponder, Button, Animated } from 'react-native'
 import { Svg } from 'expo'
 
 import Maths from '../util/Maths'
-import LetterTemplate from './LetterTemplate/LetterTemplate'
+import LetterTemplate from './LetterTemplate'
+import LetterHints from './LetterHints/LetterHints'
 
 export default class Canvas extends Component {
   constructor(props) {
     super(props)
 
     this.state = {
-      points: [],         // stores coordinates of finger position, inspired by rn-draw
-      strokes: [],        // stores lines drawn between points, inspired by rn-draw
+      points: [],               // stores coordinates of finger position, inspired by rn-draw
+      validStrokes: [],         // stores lines drawn in a section
       activeSection: 0,
       activeSubsection: 0,
       tolerance: props.tolerance,
-      distanceFromSubStart: null,         // used to validate direction
+      distanceFromSubStart: null,   // used to validate direction
       errors: {
         TooFarFromStart: 0,
         TooFarFromLine: 0,
@@ -25,7 +26,8 @@ export default class Canvas extends Component {
       },
       blob: {
         show: false,
-        pos: []
+        pos: [],
+        source: require('../../assets/color_blobs/orange_blob.png')
       },
     }
   }
@@ -79,17 +81,35 @@ export default class Canvas extends Component {
     const p0 = Maths.mult(activeSubsection[0], scale)
     const p1 = Maths.mult(activeSubsection[1], scale)
     const nearestPoint = Maths.nearestPointOnLine(fingerPos, p0, p1)
-    const d1 = Maths.distance(fingerPos, nearestPoint)
-
-    if (d1 > tolerance) {
-      // TODO show blob on fingerPos - this.setState({ blob: { show: true, pos: fingerPos }})
+    if (!nearestPoint) {
       const tooFar = errors.TooFarFromLine + 1
-      this.setState({ errors: { ...errors, TooFarFromLine: tooFar, ReleasedAfterError: false } }, () => {
+      this.setState({ errors: { ...errors, TooFarFromLine: tooFar, ReleasedAfterError: false },
+        blob: { show: true, pos: fingerPos, source: this.getColorBlob() } }, () => {
         if (tooFar >= 3) {
           if (this.props.tolerance === tolerance) {
             this.setState({ tolerance: tolerance + 15 })  // TODO make it look smoothly with animation
           }
         }
+        setTimeout(() => {
+          this.setState({ points: [], blob: { show: false } })
+        }, 1000)
+      })
+      return
+    }
+    const d1 = Maths.distance(fingerPos, nearestPoint)
+
+    if (d1 > tolerance) {
+      const tooFar = errors.TooFarFromLine + 1
+      this.setState({ errors: { ...errors, TooFarFromLine: tooFar, ReleasedAfterError: false },
+        blob: { show: true, pos: fingerPos, source: this.getColorBlob() } }, () => {
+        if (tooFar >= 3) {
+          if (this.props.tolerance === tolerance) {
+            this.setState({ tolerance: tolerance + 15 })  // TODO make it look smoothly with animation
+          }
+        }
+        setTimeout(() => {
+          this.setState({ points: [], blob: { show: false } })
+        }, 1000)
       })
       return
     }
@@ -122,11 +142,9 @@ export default class Canvas extends Component {
     }
 
     this.setState({ points: [...points, fingerPos] })
-
-    // TODO think about deleting points and strokes immediately
   }
 
-  onResponderRelease = (e, gestureState) => {
+  onResponderRelease = e => {
     const { errors } = this.state
     this.setState({ distanceFromSubStart: null, activeSubsection: 0 })
 
@@ -137,8 +155,6 @@ export default class Canvas extends Component {
           ...errors,
           ReleasedAfterError: true
         },
-        points: [],
-        strokes: []
       })
       return
     }
@@ -151,9 +167,39 @@ export default class Canvas extends Component {
     const d = Maths.distance(fingerPos, end)
     if (d > tolerance) {
       // TODO animate EndPoint
-      this.setState({ points: [], strokes: [] })
+      this.setState({ points: [] })
     } else {
-      this.setState({ points: [...points, fingerPos], activeSection: this.state.activeSection + 1 })
+      if (this.state.activeSection < this.props.letterDef.length - 1) {
+        const validStroke = (
+          <Svg.Path
+            key={this.state.activeSection}
+            d={this.convertToPath(points)}
+            stroke={this.props.strokeColor}
+            strokeWidth={20}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
+          />
+        )
+        this.setState({points: [], validStrokes: [...this.state.validStrokes, validStroke], activeSection: this.state.activeSection + 1})
+      }
+    }
+  }
+
+  getColorBlob = () => {
+    switch (this.props.strokeColor) {
+      case '#ed1c24':
+        return require('../../assets/color_blobs/red_blob.png')
+      case '#39b54a':
+        return require('../../assets/color_blobs/green_blob.png')
+      case '#fbb03b':
+        return require('../../assets/color_blobs/orange_blob.png')
+      case '#29abe2':
+        return require('../../assets/color_blobs/blue_blob.png')
+      case '#b00088':
+        return require('../../assets/color_blobs/pink_blob.png')
+      default:
+        return require('../../assets/color_blobs/orange_blob.png')
     }
   }
 
@@ -180,41 +226,64 @@ export default class Canvas extends Component {
   }
 
   render() {
-    const { strokes, points, activeSection, tolerance, blob } = this.state
+    const { validStrokes, points, activeSection, tolerance, blob } = this.state
     const { letterDef, scale, strokeColor } = this.props
-    // console.log(this.state)
 
     return (
       <View {...this.panResponder.panHandlers} style={styles.svgContainer}>
         <Svg style={styles.container}>
           <LetterTemplate
             sections={letterDef}
-            activeSection={letterDef[activeSection]}
             strokeWidth={tolerance}
             scale={scale}
           />
-          <Svg.G>
-            {strokes}
-              <Svg.Path
-                d={this.convertToPath(points)}
-                stroke={strokeColor}
-                strokeWidth={20}
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                fill='none'
-              />
-
-            {/*{blob.show &&*/}
-              {/*<Svg.Image*/}
-                {/*x={blob.pos[0] + 50}*/}
-                {/*y={blob.pos[1] + 50}*/}
-                {/*width={100}*/}
-                {/*height={100}*/}
-                {/*href={require('../../assets/blob.png')}*/}
-              {/*/>*/}
-            {/*}*/}
-          </Svg.G>
+          {validStrokes}
+          <LetterHints
+            sections={letterDef}
+            activeSection={activeSection}
+            strokeWidth={tolerance}
+            scale={scale}
+          />
+          <Svg.Path
+            d={this.convertToPath(points)}
+            stroke={strokeColor}
+            strokeWidth={20}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
+          />
+          {blob.show &&
+            <Svg.Image
+              x={blob.pos[0] - 50}
+              y={-blob.pos[1] + 50}
+              width='100'
+              height='100'
+              href={blob.source}
+            />
+          }
         </Svg>
+        <Button title='Reset' onPress={() => {
+          this.setState({
+            points: [],               // stores coordinates of finger position, inspired by rn-draw
+            validStrokes: [],         // stores lines drawn in a section
+            activeSection: 0,
+            activeSubsection: 0,
+            tolerance: this.props.tolerance,
+            distanceFromSubStart: null,   // used to validate direction
+            errors: {
+            TooFarFromStart: 0,
+            TooFarFromLine: 0,
+            WrongDirection: 0,
+            TooFarFromEnd: 0,
+            ReleasedAfterError: true,
+          },
+            blob: {
+            show: false,
+            pos: [],
+            source: require('../../assets/color_blobs/orange_blob.png')
+          },
+        })
+        }}/>
       </View>
     )
   }

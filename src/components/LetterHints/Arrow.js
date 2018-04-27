@@ -3,7 +3,10 @@ import { Svg } from 'expo'
 
 import Maths from '../../util/Maths'
 
-export default class StartPoint extends Component {
+/**
+ * This component defines an arrow showing the direction change of a section.
+ */
+export default class Arrow extends Component {
   constructor(props) {
     super(props)
     this.state = {
@@ -12,14 +15,18 @@ export default class StartPoint extends Component {
   }
 
   /**
-   * Calculate angle between direction vector of first subsection
-   * and x-axis and rotate the start point.
+   * Triggered before component mounts.
+   * Sets the rotation angle.
    */
   componentWillMount() {
     const { p0, p1 } = this.props
     this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
   }
 
+  /**
+   * Triggered when component receives new props after mounting.
+   * Sets new rotation angle, if lines and their direction have changed.
+   */
   componentWillReceiveProps(nextProps) {
     const { p0, p1 } = nextProps
     const d1 = Maths.sub(this.props.p1, this.props.p0)
@@ -32,26 +39,18 @@ export default class StartPoint extends Component {
   }
 
   render() {
-    const { p0, scale, strokeWidth } = this.props
+    const { p0, scale } = this.props
 
     return (
       <Svg.G scale={scale}>
         <Svg.Path
-          d={`M${p0[0] - 6} ${p0[1]} a6 6 0 1,0 12,0 a6 6 0 1,0 -12,0`}
+          d={`M${p0[0]} ${p0[1]} l30 0 l-10 -7.5 m10 7.5 l-10 7.5`}
           stroke='#ccc914'
-          strokeWidth={strokeWidth}
+          strokeWidth={3}
           strokeLinecap='round'
           strokeLinejoin='round'
           fill='none'
-        />
-        <Svg.Path
-          d={`M${p0[0] - 4.5} ${p0[1]} l0 -10 l+12 +10 l-12 +10 z`}
-          stroke='#99970f'
-          strokeWidth={1}
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          fill='#99970f'
-          transform={{rotation: this.state.angle, originX: p0[0], originY: p0[1]}}
+          transform={{ rotation: this.state.angle, originX: p0[0], originY: p0[1] }}
         />
       </Svg.G>
     )

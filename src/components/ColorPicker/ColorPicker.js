@@ -3,7 +3,14 @@ import { View, StyleSheet } from 'react-native'
 
 import Color from './Color'
 
+/**
+ * This component defines a container for all pickable Colors for the stroke.
+ */
 export default class ColorPicker extends Component {
+
+  /**
+   * Sends hex code of picked color received by child component back to LetterScreen.
+   */
   updateColor = color => {
     this.props.updateColor(color)
   }

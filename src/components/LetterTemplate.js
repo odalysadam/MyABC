@@ -1,25 +1,23 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
 
-import StartPoint from './StartPoint'
-import EndPoint from './EndPoint'
-import Arrow from './Arrow'
-
- // TODO fix all this, when iteration while drawing works (if it needs to be fixed Kappa)
+/**
+ * This component visualizes the letter to be drawn.
+ */
 export default class LetterTemplate extends Component {
   constructor(props) {
     super(props)
 
     this.state = {
-      activeSection: props.activeSection,
       path: '',
       strokeWidth: props.strokeWidth,
     }
   }
 
   /**
+   * Triggered before component mounts.
    * Builds a SVG Path Object definition out of points defining the letter
-   * and stores it in this components state before it mounts
+   * and stores it in this components state.
    */
   componentWillMount() {
     const { sections } = this.props
@@ -42,22 +40,18 @@ export default class LetterTemplate extends Component {
     this.setState({ path })
   }
 
+  /**
+   * Triggered when component receives new props.
+   * Determines if strokeWidth has changes and if so stores new strokeWidth in state
+   */
   componentWillReceiveProps(nextProps) {
     if (this.props.strokeWidth !== nextProps.strokeWidth) {
       this.setState({ strokeWidth: nextProps.strokeWidth })
     }
   }
 
-  renderSubsectionArrows = () => {
-    return this.state.activeSection.map((subsection, index) => {
-      if (index != 0) {
-        return <Arrow key={index} p0={subsection[0]} p1={subsection[1]} scale={this.props.scale} />
-      }
-    })
-  }
-
   render() {
-    const { activeSection, path, strokeWidth } = this.state
+    const { path, strokeWidth } = this.state
     const { scale } = this.props
 
     return (
@@ -71,9 +65,6 @@ export default class LetterTemplate extends Component {
           fill='none'
           scale={scale}
         />
-        <StartPoint p0={activeSection[0][0]} p1={activeSection[0][1]} scale={scale} strokeWidth={strokeWidth} />
-        {activeSection.length > 1 && this.renderSubsectionArrows()}
-        <EndPoint p={activeSection[activeSection.length - 1][1]} scale={scale} strokeWidth={strokeWidth} />
       </Svg.G>
     )
   }

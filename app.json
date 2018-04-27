@@ -4,7 +4,7 @@
     "description": "Prototype for an app teaching children to write letters",
     "slug": "my-abc",
     "privacy": "public",
-    "sdkVersion": "25.0.0",
+    "sdkVersion": "26.0.0",
     "version": "1.0.0",
     "platforms": ["ios"],
     "orientation": "landscape",

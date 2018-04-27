@@ -4,6 +4,9 @@ import { View, StyleSheet } from 'react-native'
 import letters from '../logic/letters'
 import Canvas from './Canvas'
 
+/**
+ * This component holds the data to define the first level and sets up the Canvas.
+ */
 export default class LevelOne extends Component {
   render() {
     return (
