@@ -6,17 +6,18 @@ import { Svg } from 'expo'
  */
 export default class EndPoint extends Component {
   render() {
-    const { p, scale, strokeWidth } = this.props
+    const { p, scale } = this.props
+    const r = (this.props.strokeWidth + 10) / 2
 
     return (
       <Svg.G>
         <Svg.Path
-          d={`M${p[0] - 6} ${p[1]} a6 6 0 1,0 12,0 a6 6 0 1,0 -12,0`}
+          d={`M${p[0] - r} ${p[1]} a${r} ${r} 0 1,0 ${r * 2},0 a${r} ${r} 0 1,0 -${r * 2},0`}
           stroke='#ccc914'
-          strokeWidth={strokeWidth}
+          strokeWidth={1}
           strokeLinecap='round'
           strokeLinejoin='round'
-          fill='none'
+          fill='#ccc914'
           scale={scale}
         />
         <Svg.Path

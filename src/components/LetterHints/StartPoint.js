@@ -39,25 +39,26 @@ export default class StartPoint extends Component {
   }
 
   render() {
-    const { p0, scale, strokeWidth } = this.props
+    const { p0, scale } = this.props
+    const r = (this.props.strokeWidth + 10) / 2
 
     return (
       <Svg.G scale={scale}>
         <Svg.Path
-          d={`M${p0[0] - 6} ${p0[1]} a6 6 0 1,0 12,0 a6 6 0 1,0 -12,0`}
+          d={`M${p0[0] - r} ${p0[1]} a${r} ${r} 0 1,0 ${r * 2},0 a${r} ${r} 0 1,0 -${r * 2},0`}
           stroke='#ccc914'
-          strokeWidth={strokeWidth}
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          fill='none'
-        />
-        <Svg.Path
-          d={`M${p0[0] - 4.5} ${p0[1]} l0 -10 l+12 +10 l-12 +10 z`}
-          stroke='#99970f'
           strokeWidth={1}
           strokeLinecap='round'
           strokeLinejoin='round'
-          fill='#99970f'
+          fill='#ccc914'
+        />
+        <Svg.Path
+          d={`M${p0[0] - r / 2} ${p0[1]} l${r} 0 l-10 -7.5 m10 7.5 l-10 7.5`}
+          stroke='#99970f'
+          strokeWidth={3}
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          fill='none'
           transform={{rotation: this.state.angle, originX: p0[0], originY: p0[1]}}
         />
       </Svg.G>

@@ -38,7 +38,7 @@ export default class Canvas extends Component {
   componentWillMount() {
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      // onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e, gestureState) => this.onResponderGrant(e, gestureState),
       onPanResponderMove: (e, gestureState) => this.onResponderMove(e, gestureState),
       onPanResponderRelease: (e, gestureState) => this.onResponderRelease(e, gestureState)
@@ -49,7 +49,11 @@ export default class Canvas extends Component {
    * This method is triggered, when the user touches the screen. It checks if
    * the finger position on screen is close enough to the active sections start point.
    */
-  onResponderGrant = e => {
+  onResponderGrant = (e, gs) => {
+
+    // there's only one finger allowed
+    if (gs.numberActiveTouches > 1) return
+
     const { activeSection, points, tolerance, errors } = this.state
     const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
 
@@ -64,7 +68,11 @@ export default class Canvas extends Component {
     }
   }
 
-  onResponderMove = e => {
+  onResponderMove = (e, gs) => {
+
+    // there's only one finger allowed
+    if (gs.numberActiveTouches > 1) return
+
     const { errors } =  this.state
 
     // if user didn't find start before or didn't release
