@@ -101,4 +101,17 @@ export default class Maths {
   static equals(v0, v1) {
     return v0[0] === v1[0] && v0[1] === v1[1]
   }
+
+  static funcToPoints(xt, yt, tMin, tMax, segments = 50) {
+    eval('evalCurve = t => { return [' +
+      xt + ', ' + yt + '] }')
+
+    let points = []
+    for (let i = 0; i <= segments; i++) {
+      const t = tMin + (i / segments) * (tMax - tMin)
+      const p = evalCurve(t)
+      points.push(p)
+    }
+    return points
+  }
 }

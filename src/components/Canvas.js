@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, PanResponder, Button, Animated } from 'react-native'
+import { View, StyleSheet, PanResponder, Button } from 'react-native'
 import { Svg } from 'expo'
 
 import Maths from '../util/Maths'
@@ -9,10 +9,9 @@ import LetterHints from './LetterHints/LetterHints'
 export default class Canvas extends Component {
   constructor(props) {
     super(props)
-
-    this.state = {
+    this.initialState = {
       points: [],               // stores coordinates of finger position, inspired by rn-draw
-      validStrokes: [],         // stores lines drawn in a section
+      validStrokes: [],         // stores lines drawn in a section, inspired by rn-draw
       activeSection: 0,
       activeSubsection: 0,
       tolerance: props.tolerance,
@@ -30,6 +29,8 @@ export default class Canvas extends Component {
         source: require('../../assets/color_blobs/orange_blob.png')
       },
     }
+
+    this.state = Object.assign( {}, this.initialState)
   }
 
   /**
@@ -38,7 +39,6 @@ export default class Canvas extends Component {
   componentWillMount() {
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      // onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (e, gestureState) => this.onResponderGrant(e, gestureState),
       onPanResponderMove: (e, gestureState) => this.onResponderMove(e, gestureState),
       onPanResponderRelease: (e, gestureState) => this.onResponderRelease(e, gestureState)
@@ -57,7 +57,7 @@ export default class Canvas extends Component {
     const { activeSection, points, tolerance, errors } = this.state
     const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
 
-    const start = Maths.mult(this.props.letterDef[activeSection][0][0], this.props.scale)
+    const start = Maths.mult(this.props.letterDef[activeSection][0].def[0], this.props.scale)
     const d = Maths.distance(fingerPos, start)
 
     if (d > tolerance) {
@@ -86,8 +86,8 @@ export default class Canvas extends Component {
     const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
 
     // validate distance to activeSubsection, TestCase: Lines Only
-    const p0 = Maths.mult(activeSubsection[0], scale)
-    const p1 = Maths.mult(activeSubsection[1], scale)
+    const p0 = Maths.mult(activeSubsection.def[0], scale)
+    const p1 = Maths.mult(activeSubsection.def[1], scale)
     const nearestPoint = Maths.nearestPointOnLine(fingerPos, p0, p1)
     if (!nearestPoint) {
       const tooFar = errors.TooFarFromLine + 1
@@ -140,7 +140,7 @@ export default class Canvas extends Component {
     // this.setState({ distanceFromSubStart: d2 })
 
     // validate if finger is hitting end point of subsection, if so switch to next subsection
-    const end = Maths.mult(activeSubsection[1], scale)
+    const end = Maths.mult(activeSubsection.def[1], scale)
     const d3 = Maths.distance(fingerPos, end)
 
     if (d3 <= tolerance) {
@@ -171,7 +171,7 @@ export default class Canvas extends Component {
     const activeSection = this.props.letterDef[this.state.activeSection]
     const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
 
-    const end = Maths.mult(activeSection[activeSection.length - 1][1], this.props.scale)
+    const end = Maths.mult(activeSection[activeSection.length - 1].def[1], this.props.scale)
     const d = Maths.distance(fingerPos, end)
     if (d > tolerance) {
       // TODO animate EndPoint
@@ -212,7 +212,7 @@ export default class Canvas extends Component {
   }
 
   /**
-   * Creates a SVG Path string definition out of points
+   * Creates a SVG Path string definition out of points. Used to visualize finger movement.
    *
    * @param {Array.<number[]>} - coordinates where screen was touched
    * @returns {String} definition for SVG Path
@@ -241,7 +241,7 @@ export default class Canvas extends Component {
       <View {...this.panResponder.panHandlers} style={styles.svgContainer}>
         <Svg style={styles.container}>
           <LetterTemplate
-            sections={letterDef}
+            def={letterDef}
             strokeWidth={tolerance}
             scale={scale}
           />
@@ -270,28 +270,7 @@ export default class Canvas extends Component {
             />
           }
         </Svg>
-        <Button title='Reset' onPress={() => {
-          this.setState({
-            points: [],               // stores coordinates of finger position, inspired by rn-draw
-            validStrokes: [],         // stores lines drawn in a section
-            activeSection: 0,
-            activeSubsection: 0,
-            tolerance: this.props.tolerance,
-            distanceFromSubStart: null,   // used to validate direction
-            errors: {
-            TooFarFromStart: 0,
-            TooFarFromLine: 0,
-            WrongDirection: 0,
-            TooFarFromEnd: 0,
-            ReleasedAfterError: true,
-          },
-            blob: {
-            show: false,
-            pos: [],
-            source: require('../../assets/color_blobs/orange_blob.png')
-          },
-        })
-        }}/>
+        <Button title='Reset' onPress={() => this.setState(this.initialState)}/>
       </View>
     )
   }

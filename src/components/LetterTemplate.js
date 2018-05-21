@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
 
+import Maths from '../util/Maths'
+
 /**
  * This component visualizes the letter to be drawn.
  */
@@ -20,7 +22,7 @@ export default class LetterTemplate extends Component {
    * and stores it in this components state.
    */
   componentWillMount() {
-    const { sections } = this.props
+    const sections = this.props.def
 
     // iterate through sections
     let path = ''
@@ -30,10 +32,13 @@ export default class LetterTemplate extends Component {
       // iterate through subsections and build path
       for (let j = 0; j < section.length; j++) {
         const subsection = section[j]
-        const p0 = subsection[0]
-        const p1 = subsection[1]
+        if (subsection.type === 'LINE') {
+          path = path + this.buildLine(subsection)
+        }
 
-        path = path + `M${p0[0]} ${p0[1]} L${p1[0]} ${p1[1]} `
+        if (subsection.type === 'CURVE') {
+          path = path + this.buildCurve(subsection)
+        }
       }
     }
 
@@ -48,6 +53,28 @@ export default class LetterTemplate extends Component {
     if (this.props.strokeWidth !== nextProps.strokeWidth) {
       this.setState({ strokeWidth: nextProps.strokeWidth })
     }
+  }
+
+  buildLine = subsection => {
+    let path = ''
+
+    const p0 = subsection.def[0]
+    const p1 = subsection.def[1]
+
+    return path + `M${p0[0]} ${p0[1]} L${p1[0]} ${p1[1]} `
+  }
+
+  buildCurve = subsection => {
+    const { xt, yt, tMin, tMax } = subsection.def
+    const points = Maths.funcToPoints(xt, yt, tMin, tMax)
+
+    let path = 'M' + points[0][0] + ' ' + points[0][1]
+
+    for (let i = 1; i < points.length; i++) {
+      path = path + 'L' + points[i][0] + ' ' + points[i][1]
+    }
+
+    return path
   }
 
   render() {
