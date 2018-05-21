@@ -27,49 +27,68 @@ export default class LetterHints extends Component {
     const activeSection = this.props.sections[this.props.activeSection]
     const start = this.extractStart(activeSection)
     const end = this.extractEnd(activeSection)
-    const arrowPoints = this.extractArrowPoints(activeSection)
 
     this.setState({
       start,
-      end,
-      arrowPoints
+      end
     })
+
+    if (activeSection.length > 1) {
+      this.setState({
+        arrowPoints: this.extractArrowPoints(activeSection)
+      })
+    }
   }
 
   componentWillReceiveProps(nextProps) {
     const newActiveSection = nextProps.sections[nextProps.activeSection]
 
-    const newStart = this.extractStart(newActiveSection)
     const oldStart = this.state.start
+    const newStart = this.extractStart(newActiveSection)
     if (!Maths.equals(oldStart.p0, newStart.p0) || !Maths.equals(oldStart.p1, newStart.p1)) {
       this.setState({
         start: newStart
       })
     }
 
-    const newEnd = this.extractEnd(newActiveSection)
     const oldEnd = this.state.end
+    const newEnd = this.extractEnd(newActiveSection)
     if (!Maths.equals(oldEnd, newEnd)) {
       this.setState({
         end: newEnd
       })
     }
 
-    const newArrowPoints = this.extractArrowPoints(newActiveSection)
-    const oldArrowPoints = this.state.arrowPoints
-    let equalCount = 0
-
-    for (let i = 0; i < newArrowPoints.length; i++) {
-      if (Maths.equals(newArrowPoints[i].p0, oldArrowPoints[i].p0) && Maths.equals(newArrowPoints[i].p1, oldArrowPoints[i].p1)) {
-        equalCount++
-      }
+    if (newActiveSection.length < 2) {
+      this.setState({
+        arrowPoints: []
+      })
+      return
     }
 
-    if (equalCount !== newArrowPoints.length) {
+    const oldArrowPoints = this.state.arrowPoints
+    const newArrowPoints = this.extractArrowPoints(newActiveSection)
+
+    if (oldArrowPoints.length === 0) {
       this.setState({
         arrowPoints: newArrowPoints
       })
+    } else {
+      let equalCount = 0
+
+      for (let i = 0; i < newArrowPoints.length; i++) {
+        if (Maths.equals(newArrowPoints[i].p0, oldArrowPoints[i].p0) && Maths.equals(newArrowPoints[i].p1, oldArrowPoints[i].p1)) {
+          equalCount++
+        }
+      }
+
+      if (equalCount !== newArrowPoints.length) {
+        this.setState({
+          arrowPoints: newArrowPoints
+        })
+      }
     }
+
   }
 
   extractStart = section => {

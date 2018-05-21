@@ -27,7 +27,7 @@ export default class LetterScreen extends Component {
     return (
       <View style={styles.container}>
         <ColorPicker updateColor={this.handleColorUpdate}/>
-        <LevelOne letter='a_big' strokeColor={this.state.color}/>
+        <LevelOne letter='p_small' strokeColor={this.state.color}/>
       </View>
     )
   }
