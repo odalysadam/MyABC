@@ -18,6 +18,8 @@ export default class LetterScreen extends Component {
 
   /**
    * Store color received by the ColorPicker in state so it can be passed down to LevelOne.
+   *
+   * @param {string} color - color in hexadecimal presentation
    */
   handleColorUpdate = color => {
     this.setState({ color })

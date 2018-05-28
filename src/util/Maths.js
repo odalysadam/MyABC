@@ -66,6 +66,18 @@ export default class Maths {
   }
 
   /**
+   * Tests if given vectors are equal.
+   * Vectors are equal, if their x and y values are equal.
+   *
+   * @param {number[]} v0 - array representing a vector in 2D
+   * @param {number[]} v1 - array representing a vector in 2D
+   * @returns {boolean} true, if x value and y value of vectors are equal
+   */
+  static equals(v0, v1) {
+    return v0[0] === v1[0] && v0[1] === v1[1]
+  }
+
+  /**
    * Calculates distance from point to line
    *
    * @param {number[]} p - array representing a point in 2D
@@ -86,22 +98,44 @@ export default class Maths {
     return Maths.add(p0, Maths.mult(direction, t))
   }
 
+  /**
+   * Calculates angle between x-axis and vector from p0 to p1 in degree.
+   * Used for rotations.
+   *
+   * @param {number[]} p0 - array representing a point in 2D
+   * @param {number[]} p1 - array representing a point in 2D
+   * @returns {number} angle between x-axis and vector from p0 to p1 in degree
+   */
   static calcRotationAngle(p0, p1) {
-    const d = this.sub(p1, p0)
-    const s = this.dot(d, [1, 0])
-    const cos = s / (this.length(d) * this.length([1, 0]))
-    const a = this.radToDeg(Math.acos(cos))
+    const d = Maths.sub(p1, p0)
+    const s = Maths.dot(d, [1, 0])
+    const cos = s / (Maths.length(d) * Maths.length([1, 0]))
+    const a = Maths.radToDeg(Math.acos(cos))
     return d[1] > 0 ? a : -a
   }
 
+  /**
+   * Converts an angle from radians to degree.
+   * Origin of formula:
+   * http://cwestblog.com/2012/11/12/javascript-degree-and-radian-conversion/, 27.05.2018
+   *
+   * @param {number} rad - angle in radians
+   * @returns {number} angle in degree
+   */
   static radToDeg(rad) {
     return rad * 180 / Math.PI
   }
 
-  static equals(v0, v1) {
-    return v0[0] === v1[0] && v0[1] === v1[1]
-  }
-
+  /**
+   * Translates parametric functions into an array of points.
+   *
+   * @param {string} xt - parametric function x(t)
+   * @param {string} yt - parametric function y(t)
+   * @param {number} tMin - minimum value for t
+   * @param {number} tMax - maximum value for t
+   * @param {number} [segments=50] - number of segments the curve should be split into
+   * @returns {Array.<number[]>} array of two-dimensional points
+   */
   static funcToPoints(xt, yt, tMin, tMax, segments = 50) {
     eval('evalCurve = t => { return [' +
       xt + ', ' + yt + '] }')

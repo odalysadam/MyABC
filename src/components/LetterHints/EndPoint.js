@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
+import PropTypes from 'prop-types'
 
 /**
- * This component visualizes the end point of a section
+ * This component visualizes the end point of a section through a circle with a square in it
  */
 export default class EndPoint extends Component {
   render() {
@@ -32,4 +33,16 @@ export default class EndPoint extends Component {
       </Svg.G>
     )
   }
+}
+
+EndPoint.propTypes = {
+
+  /** Last point of the section */
+  p: PropTypes.arrayOf(PropTypes.number).isRequired,
+
+  /** Number to scale the Endpoint */
+  scale: PropTypes.number.isRequired,
+
+  /** Stroke width of LetterTemplate */
+  strokeWidth: PropTypes.number.isRequired
 }

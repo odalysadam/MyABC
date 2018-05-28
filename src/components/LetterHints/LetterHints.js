@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
+import PropTypes from 'prop-types'
 
 import StartPoint from './StartPoint'
 import EndPoint from './EndPoint'
@@ -7,7 +8,8 @@ import Arrow from './Arrow'
 import Maths from '../../util/Maths'
 
 /**
- * This component defines a container to show visualized letter hints like start point, direction change and endpoint
+ * This component defines a container to show visualized letter hints like start point,
+ * arrows for direction change and end point.
  */
 export default class LetterHints extends Component {
   constructor() {
@@ -23,9 +25,13 @@ export default class LetterHints extends Component {
     }
   }
 
+  /**
+   * React Lifecycle Method. Triggered before component mounts.
+   * Setting up necessary data for letter hints.
+   */
   componentWillMount() {
     const activeSection = this.props.sections[this.props.activeSection]
-    const start = this.extractStart(activeSection)
+    const start = this.extractStartData(activeSection)
     const end = this.extractEnd(activeSection)
 
     this.setState({
@@ -40,17 +46,25 @@ export default class LetterHints extends Component {
     }
   }
 
+  /**
+   * React Lifecycle Method. Triggered when props change
+   * Updates data for letter hints, if it has changed.
+   *
+   * @param {Object} nextProps - Object of props this component is about to receive
+   */
   componentWillReceiveProps(nextProps) {
     const newActiveSection = nextProps.sections[nextProps.activeSection]
 
+    // check if position of start point has changed
     const oldStart = this.state.start
-    const newStart = this.extractStart(newActiveSection)
+    const newStart = this.extractStartData(newActiveSection)
     if (!Maths.equals(oldStart.p0, newStart.p0) || !Maths.equals(oldStart.p1, newStart.p1)) {
       this.setState({
         start: newStart
       })
     }
 
+    // check if position of end point has changed
     const oldEnd = this.state.end
     const newEnd = this.extractEnd(newActiveSection)
     if (!Maths.equals(oldEnd, newEnd)) {
@@ -59,13 +73,15 @@ export default class LetterHints extends Component {
       })
     }
 
-    if (newActiveSection.length < 2) {
+    // reset arrowPoints, if there's only one subsection
+    if (newActiveSection.length < 2 && this.state.arrowPoints.length > 0) {
       this.setState({
         arrowPoints: []
       })
       return
     }
 
+    // check if a position for arrows have changed
     const oldArrowPoints = this.state.arrowPoints
     const newArrowPoints = this.extractArrowPoints(newActiveSection)
 
@@ -74,15 +90,15 @@ export default class LetterHints extends Component {
         arrowPoints: newArrowPoints
       })
     } else {
-      let equalCount = 0
 
+      let notEqualCount = 0
       for (let i = 0; i < newArrowPoints.length; i++) {
-        if (Maths.equals(newArrowPoints[i].p0, oldArrowPoints[i].p0) && Maths.equals(newArrowPoints[i].p1, oldArrowPoints[i].p1)) {
-          equalCount++
+        if (!Maths.equals(newArrowPoints[i].p0, oldArrowPoints[i].p0) || !Maths.equals(newArrowPoints[i].p1, oldArrowPoints[i].p1)) {
+          notEqualCount++
         }
       }
 
-      if (equalCount !== newArrowPoints.length) {
+      if (notEqualCount > 0) {
         this.setState({
           arrowPoints: newArrowPoints
         })
@@ -91,7 +107,13 @@ export default class LetterHints extends Component {
 
   }
 
-  extractStart = section => {
+  /**
+   * Extracts points needed to display StartPoint out of the active section.
+   *
+   * @param {Object[]} section - Arrow of objects describing subsections
+   * @returns {Object} Object with two points p0, p1 or an empty object
+   */
+  extractStartData = section => {
     const subsection = section[0]
 
     if (subsection.type === 'LINE') {
@@ -99,16 +121,21 @@ export default class LetterHints extends Component {
     }
 
     if (subsection.type === 'CURVE') {
-      console.log('curve')
       const { xt, yt, tMin, tMax } = subsection.def
       const points = Maths.funcToPoints(xt, yt, tMin, tMax)
 
       return { p0: points[0], p1: points[1] }
     }
 
-    return []
+    return {}
   }
 
+  /**
+   * Extracts the last point out of the active section.
+   *
+   * @param {Object[]} section - Arrow of objects describing subsections
+   * @returns {number[]} Array representing a two-dimensional point
+   */
   extractEnd = section => {
     const subsection = section[section.length - 1]
 
@@ -126,6 +153,13 @@ export default class LetterHints extends Component {
     return []
   }
 
+  /**
+   * Extracts points needed to display arrows to show change in direction
+   * out of the active section.
+   *
+   * @param {Object[]} section - Arrow of objects describing subsections
+   * @returns {Object[]} Array of objects with points for arrows
+   */
   extractArrowPoints = section => {
     const arrowPoints = []
 
@@ -169,16 +203,30 @@ export default class LetterHints extends Component {
   }
 
   render() {
-    const { sections, scale, strokeWidth } = this.props
-    const { start, end } = this.state
-    const activeSection = sections[this.props.activeSection]
+    const { scale, strokeWidth } = this.props
+    const { start, end, arrowPoints } = this.state
 
     return (
       <Svg.G>
         <StartPoint p0={start.p0} p1={start.p1} scale={scale} strokeWidth={strokeWidth} />
-        {activeSection.length > 1 && this.renderSubsectionArrows()}
+        {arrowPoints.length && this.renderSubsectionArrows()}
         <EndPoint p={end} scale={scale} strokeWidth={strokeWidth} />
       </Svg.G>
     )
   }
+}
+
+LetterHints.propTypes = {
+
+  /** Letter definition */
+  sections: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.object)).isRequired,
+
+  /** Index of active section */
+  activeSection: PropTypes.number.isRequired,
+
+  /** Stroke width of LetterTemplate */
+  strokeWidth: PropTypes.number.isRequired,
+
+  /** Number to scale the arrow */
+  scale: PropTypes.number.isRequired,
 }
