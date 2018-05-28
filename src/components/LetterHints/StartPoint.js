@@ -1,10 +1,12 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
+import PropTypes from 'prop-types'
 
 import Maths from '../../util/Maths'
 
 /**
- * This component visualizes the start point and initial direction of a section
+ * This component visualizes the start point through a circle with an arrow in it.
+ * The arrow initially points to the right. It's rotated to show the direction the finger should move.
  */
 export default class StartPoint extends Component {
   constructor(props) {
@@ -15,8 +17,8 @@ export default class StartPoint extends Component {
   }
 
   /**
-   * Triggered before component mounts.
-   * Sets the rotation angle.
+   * React Lifecycle Method. Triggered before component mounts.
+   * Sets the rotation angle to make arrow point in right direction.
    */
   componentWillMount() {
     const { p0, p1 } = this.props
@@ -24,18 +26,19 @@ export default class StartPoint extends Component {
   }
 
   /**
-   * Triggered when component receives new props after mounting.
+   * React Lifecycle Method. Triggered when props change.
    * Sets new rotation angle, if lines and their direction have changed.
+   *
+   * @param {Object} nextProps - Object of props this component is about to receive
    */
   componentWillReceiveProps(nextProps) {
     const { p0, p1 } = nextProps
     const d1 = Maths.sub(this.props.p1, this.props.p0)
     const d2 = Maths.sub(p1, p0)
 
-    if (Maths.equals(p0, this.props.p0) && Maths.equals(p1, this.props.p1) && Maths.equals(d1, d2)) {
-      return
+    if (!Maths.equals(p0, this.props.p0) || !Maths.equals(p1, this.props.p1) || !Maths.equals(d1, d2)) {
+      this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
     }
-    this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
   }
 
   render() {
@@ -64,4 +67,19 @@ export default class StartPoint extends Component {
       </Svg.G>
     )
   }
+}
+
+StartPoint.propTypes = {
+
+  /** First point of subsection */
+  p0: PropTypes.arrayOf(PropTypes.number).isRequired,
+
+  /** Second point of subsection */
+  p1: PropTypes.arrayOf(PropTypes.number).isRequired,
+
+  /** Number to scale the arrow */
+  scale: PropTypes.number.isRequired,
+
+  /** Stroke width of LetterTemplate */
+  strokeWidth: PropTypes.number.isRequired
 }

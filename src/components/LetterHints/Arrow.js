@@ -1,10 +1,12 @@
 import React, { Component } from 'react'
 import { Svg } from 'expo'
+import PropTypes from 'prop-types'
 
 import Maths from '../../util/Maths'
 
 /**
  * This component defines an arrow showing the direction change of a section.
+ * It's positioned at the start of each following subsection after the first one.
  */
 export default class Arrow extends Component {
   constructor(props) {
@@ -15,8 +17,8 @@ export default class Arrow extends Component {
   }
 
   /**
-   * Triggered before component mounts.
-   * Sets the rotation angle.
+   * React Lifecycle Method. Triggered before component mounts.
+   * Sets the rotation angle so it points in the direction the finger should move.
    */
   componentWillMount() {
     const { p0, p1 } = this.props
@@ -24,18 +26,19 @@ export default class Arrow extends Component {
   }
 
   /**
-   * Triggered when component receives new props after mounting.
-   * Sets new rotation angle, if lines and their direction have changed.
+   * React Lifecycle Method. Triggered when props change
+   * Sets new rotation angles, if lines and their direction have changed.
+   *
+   * @param {Object} nextProps - Object of props this component is about to receive
    */
   componentWillReceiveProps(nextProps) {
     const { p0, p1 } = nextProps
     const d1 = Maths.sub(this.props.p1, this.props.p0)
     const d2 = Maths.sub(p1, p0)
 
-    if (Maths.equals(p0, this.props.p0) && Maths.equals(p1, this.props.p1) && Maths.equals(d1, d2)) {
-      return
+    if (!Maths.equals(p0, this.props.p0) || !Maths.equals(p1, this.props.p1) || !Maths.equals(d1, d2)) {
+      this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
     }
-    this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
   }
 
   render() {
@@ -55,4 +58,16 @@ export default class Arrow extends Component {
       </Svg.G>
     )
   }
+}
+
+Arrow.propTypes = {
+
+  /** First point of subsection */
+  p0: PropTypes.arrayOf(PropTypes.number).isRequired,
+
+  /** Second point of subsection */
+  p1: PropTypes.arrayOf(PropTypes.number).isRequired,
+
+  /** Number to scale the arrow */
+  scale: PropTypes.number.isRequired
 }

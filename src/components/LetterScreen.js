@@ -18,6 +18,8 @@ export default class LetterScreen extends Component {
 
   /**
    * Store color received by the ColorPicker in state so it can be passed down to LevelOne.
+   *
+   * @param {string} color - color in hexadecimal presentation
    */
   handleColorUpdate = color => {
     this.setState({ color })
@@ -27,7 +29,7 @@ export default class LetterScreen extends Component {
     return (
       <View style={styles.container}>
         <ColorPicker updateColor={this.handleColorUpdate}/>
-        <LevelOne letter='a_big' strokeColor={this.state.color}/>
+        <LevelOne letter='p_small' strokeColor={this.state.color}/>
       </View>
     )
   }

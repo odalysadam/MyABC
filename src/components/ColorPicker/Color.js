@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { TouchableHighlight, Image } from 'react-native'
+import PropTypes from 'prop-types'
 
 /**
  * This component defines a Button displayed as a color splash to change the stroke color.
@@ -14,54 +15,48 @@ export default class Color extends Component {
   }
 
   /**
-   * Triggered before component mounts.
-   * Links the color name to its related hex code and png.
+   * React Lifecycle Method. Triggered before component mounts.
+   * Stores image source and color code related to given color name in state
    */
   componentWillMount() {
+    let source = null
+    let colorCode = ''
+
     switch (this.props.color) {
       case 'red':
-        this.setState({
-          source: require('../../../assets/color_splashes/red.png'),
-          colorCode: '#ed1c24'
-        })
+        source = require('../../../assets/color_splashes/red.png')
+        colorCode = '#ed1c24'
         break
       case 'green':
-        this.setState({
-          source: require('../../../assets/color_splashes/green.png'),
-          colorCode: '#39b54a'
-        })
+        source = require('../../../assets/color_splashes/green.png')
+        colorCode = '#39b54a'
         break
       case 'orange':
-        this.setState({
-          source: require('../../../assets/color_splashes/orange.png'),
-          colorCode: '#fbb03b'
-        })
+        source = require('../../../assets/color_splashes/orange.png')
+        colorCode = '#fbb03b'
         break
       case 'blue':
-        this.setState({
-          source: require('../../../assets/color_splashes/blue.png'),
-          colorCode: '#29abe2'
-        })
+        source = require('../../../assets/color_splashes/blue.png')
+        colorCode = '#29abe2'
         break
       case 'pink':
-        this.setState({
-          source: require('../../../assets/color_splashes/pink.png'),
-          colorCode: '#b00088'
-        })
+        source = require('../../../assets/color_splashes/pink.png')
+        colorCode = '#b00088'
         break
       default:
-        this.setState({
-          source: '../../../assets/orange.png',
-          colorCode: '#fbb03b'
-        })
+        source = require('../../../assets/color_splashes/orange.png')
+        colorCode = '#fbb03b'
     }
+
+    this.setState({ source, colorCode })
   }
 
   /**
-   * Sends selected color code back to the ColorPicker
+   * Passes selected color code back to ColorPicker
    */
   onPress = () => {
     this.props.setColor(this.state.colorCode)
+    this.props.showPointer(this.props.color)
   }
 
   render() {
@@ -70,6 +65,7 @@ export default class Color extends Component {
         style={this.props.style || {}}
         onPress={this.onPress}
         underlayColor='transparent'
+        activeOpacity={0.6}
       >
         <Image
           style={{ width: 150, height: 125 }}
@@ -79,4 +75,16 @@ export default class Color extends Component {
       </TouchableHighlight>
     )
   }
+}
+
+Color.propTypes = {
+
+  /** Name of the color*/
+  color: PropTypes.string.isRequired,
+
+  /** Function for passing color code of selected color back to parent */
+  setColor: PropTypes.func.isRequired,
+
+  /** Function for passing name of selected color back to parent */
+  showPointer: PropTypes.func.isRequired
 }

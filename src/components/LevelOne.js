@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { View, StyleSheet } from 'react-native'
+import PropTypes from "prop-types";
 
 import letters from '../logic/letters'
 import Canvas from './Canvas'
@@ -26,3 +27,12 @@ const styles = StyleSheet.create({
     flex: 2,
   }
 })
+
+LevelOne.propTypes = {
+
+  /** Name of the letter */
+  letter: PropTypes.string.isRequired,
+
+  /** Color for the stroke in hexadecimal */
+  strokeColor: PropTypes.string.isRequired
+}
