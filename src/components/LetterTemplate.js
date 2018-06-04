@@ -38,6 +38,13 @@ export default class LetterTemplate extends Component {
     }
   }
 
+  /**
+   * Builds letter out of multiple paths, which can either be a line or a curve.
+   * This is done, so that sections where the ends aren't visible aren't drawn
+   * with round linecap. Round linecap makes the section look longer, so there was some
+   * unexpected behaviour where you got the error tooFarFromLine although it looked
+   * like you were hitting the line.
+   */
   buildLetter = strokeWidth => {
     const sections = this.props.def
 

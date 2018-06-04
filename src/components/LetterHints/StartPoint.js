@@ -22,7 +22,10 @@ export default class StartPoint extends Component {
    */
   componentWillMount() {
     const { p0, p1 } = this.props
-    this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
+    const d = Maths.sub(p1, p0)
+    const a = Maths.calcAngleBetweenVectors(d, [1, 0])
+    const angle = d[1] > 0 ? a : -a
+    this.setState({ angle })
   }
 
   /**
@@ -37,7 +40,10 @@ export default class StartPoint extends Component {
     const d2 = Maths.sub(p1, p0)
 
     if (!Maths.equals(p0, this.props.p0) || !Maths.equals(p1, this.props.p1) || !Maths.equals(d1, d2)) {
-      this.setState({ angle: Maths.calcRotationAngle(p0, p1) })
+      const d = Maths.sub(p1, p0)
+      const a = Maths.calcAngleBetweenVectors(d, [1, 0])
+      const angle = d[1] > 0 ? a : -a
+      this.setState({ angle })
     }
   }
 
@@ -58,7 +64,7 @@ export default class StartPoint extends Component {
         <Svg.Path
           d={`M${p0[0] - r / 2} ${p0[1]} l${r} 0 l-10 -7.5 m10 7.5 l-10 7.5`}
           stroke='#99970f'
-          strokeWidth={3}
+          strokeWidth={5}
           strokeLinecap='round'
           strokeLinejoin='round'
           fill='none'

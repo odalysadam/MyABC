@@ -99,19 +99,19 @@ export default class Maths {
   }
 
   /**
-   * Calculates angle between x-axis and vector from p0 to p1 in degree.
-   * Used for rotations.
+   * Calculates angle between two vectors in degree.
+   * Used for rotations and validation of direction.
    *
-   * @param {number[]} p0 - array representing a point in 2D
-   * @param {number[]} p1 - array representing a point in 2D
-   * @returns {number} angle between x-axis and vector from p0 to p1 in degree
+   * @param {number[]} v0 - array representing a vector in 2D
+   * @param {number[]} v1 - array representing a vector in 2D
+   * @returns {number} angle between two vectors in degree
    */
-  static calcRotationAngle(p0, p1) {
-    const d = Maths.sub(p1, p0)
-    const s = Maths.dot(d, [1, 0])
-    const cos = s / (Maths.length(d) * Maths.length([1, 0]))
+  static calcAngleBetweenVectors(v0, v1) {
+    const s = Maths.dot(v0, v1)
+    const cos = s / (Maths.length(v0) * Maths.length(v1))
     const a = Maths.radToDeg(Math.acos(cos))
-    return d[1] > 0 ? a : -a
+
+    return a
   }
 
   /**

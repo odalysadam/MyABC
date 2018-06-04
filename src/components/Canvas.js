@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, StyleSheet, PanResponder, Button } from 'react-native'
+import { View, StyleSheet, PanResponder, Button, Text } from 'react-native'
 import { Svg } from 'expo'
 import PropTypes from 'prop-types'
 
@@ -17,16 +17,16 @@ export default class Canvas extends Component {
       activeSection: 0,
       activeSubsection: 0,
       tolerance: props.tolerance,
-      distanceFromSubStart: null,   // used to validate direction
+      oldFingerPos: [],   // used to validate direction
       errors: {
         tooFarFromLine: 0,
         wrongDirection: 0,
-        releasedAfterError: true,
+        releasedAfterError: true
       },
       blob: {
         show: false,
         pos: [],
-        source: this.getColorBlob()
+        source: this.getColorBlob(props.color)
       },
       finished: false
     }
@@ -61,7 +61,7 @@ export default class Canvas extends Component {
 
   /**
    * Triggered, when the user touches the screen.
-   * Checks if finger position on screen is close enough to start point of the active sections.
+   * Checks, if finger position on screen is close enough to start point of the active sections.
    *
    * @param {Object} e - synthetic touch event nativeEvent by React Native
    * @param {Object} gs - gestureState by React Native
@@ -89,10 +89,10 @@ export default class Canvas extends Component {
     const d = Maths.distance(fingerPos, start)
     if (d > tolerance) {
       // StartPoint would be animated here
-      this.setState({ errors: { releasedAfterError: false } })
+      this.setState({ errors: { ...this.state.errors, releasedAfterError: false } })
       return
     }
-    this.setState({ points: [...points, fingerPos] })
+    this.setState({ points: [...points, fingerPos], oldFingerPos: fingerPos, errors: { ...this.state.errors } })
   }
 
   /**
@@ -115,133 +115,144 @@ export default class Canvas extends Component {
     const { errors } = this.state
     if (!errors.releasedAfterError) return
 
-    const { points, tolerance } = this.state
+    const { points, tolerance, activeSection, activeSubsection } = this.state
     const { letterDef, scale } = this.props
 
-    const activeSection = letterDef[this.state.activeSection]
-    const activeSubsection = activeSection[this.state.activeSubsection]
+    const subsection = letterDef[activeSection][activeSubsection]
     const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
 
-    // validate distance to activeSubsection
-    const distanceApproved = this.validateDistanceOnMove(fingerPos, activeSubsection)
-
-    if (!distanceApproved) {
-      const tooFar = errors.tooFarFromLine + 1
-
+    // validate distance and direction
+    const { oldFingerPos } = this.state
+    const error = this.validateFingerMovement(oldFingerPos, fingerPos, subsection)
+    if (error) {
+      const count = errors[error] + 1
       this.setState({
-        errors: { ...errors, tooFarFromLine: tooFar, releasedAfterError: false },
+        errors: { ...errors, [error]: count, releasedAfterError: false },
         blob: { show: true, pos: fingerPos, source: this.state.blob.source }
       }, () => {
-        if (tooFar >= 3) {
+        if (error === 'tooFarFromLine' && count >= 3) {
           if (this.props.tolerance === tolerance) {
             this.setState({ tolerance: tolerance + 15 })
           }
         }
+        if (error === 'wrongDirection' && count >= 3) {
+          // all letter hints would be shown and animated in order here
+        }
         setTimeout(() => {
-          this.setState({ points: [], blob: { show: false, pos: [], source: this.state.blob.source } })
+          this.setState({
+            points: [],
+            oldFingerPos: [],
+            blob: { ...this.state.blob, show: false, pos: []}
+          })
         }, 1000)
       })
       return
     }
-
-    // TODO THIS IS NOT WORKING PROPERLY WHEN SWITCHING SUBSECTIONS!!!!
-    // validate if finger is moving in right direction
-    // const oldD = this.state.distanceFromSubStart
-    // const start = Maths.mult(activeSubsection[0], scale)
-    // const d2 = Maths.distance(fingerPos, start)
-    //
-    // if (oldD && d2 < oldD) {
-    //   const wd = errors.WrongDirection + 1
-    //   this.setState({ errors: { ...errors, WrongDirection: wd, ReleasedAfterError: false } }, () => {
-    //     if (wd >= 3) {
-    //       // TODO animate startpoint and/or highlight arrow by changing color (and changing color back)
-    //     }
-    //   })
-    //   return
-    // }
-    // this.setState({ distanceFromSubStart: d2 })
+    this.setState({ oldFingerPos: fingerPos })
 
     // validate if finger is hitting end point of subsection, if so switch to next subsection
     let end = []
-    if (activeSubsection.type === 'LINE') {
-      end = Maths.mult(activeSubsection.def[1], scale)
+    if (subsection.type === 'LINE') {
+      end = Maths.mult(subsection.def[1], scale)
     }
-    if (activeSubsection.type === 'CURVE') {
-      const { xt, yt, tMin, tMax } = activeSubsection.def
+    if (subsection.type === 'CURVE') {
+      const { xt, yt, tMin, tMax } = subsection.def
       const points = Maths.funcToPoints(xt, yt, tMin, tMax)
       end = Maths.mult(points[points.length - 1], scale)
     }
 
+    this.setState({ points: [...points, fingerPos] })
+
     const d = Maths.distance(fingerPos, end)
     if (d <= tolerance) {
-      if (this.state.activeSubsection < activeSection.length - 1) {
-        this.setState({ activeSubsection: this.state.activeSubsection + 1, distanceFromSubStart: null })
-      }
-    }
-
-    this.setState({ points: [...points, fingerPos] })
-  }
-
-  onResponderRelease = e => {
-    const { errors } = this.state
-    this.setState({ distanceFromSubStart: null, activeSubsection: 0 })
-
-    if (!errors.releasedAfterError) {
-      this.setState({ errors: { ...errors, releasedAfterError: true } })
-      return
-    }
-
-    const { activeSection, points, tolerance} = this.state
-    const { letterDef, scale } = this.props
-    const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
-    const section = letterDef[activeSection]
-    const endSection = section[section.length - 1]
-
-    let end = null
-    if (endSection.type === 'LINE') {
-      end = Maths.mult(endSection.def[1], scale)
-    }
-    if (endSection.type === 'CURVE') {
-      const { xt, yt, tMin, tMax } = endSection.def
-      const curvePoints = Maths.funcToPoints(xt, yt, tMin, tMax)
-      end = Maths.mult(curvePoints[curvePoints.length - 1], scale)
-    }
-
-    const d = Maths.distance(fingerPos, end)
-    if (d > tolerance) {
-      // EndPoint would be animated here
-      this.setState({ points: [] })
-    } else {
-
-      if (activeSection < letterDef.length - 1) {
-        const validStroke = (
-          <Svg.Path
-            key={activeSection}
-            d={this.convertToPath(points)}
-            stroke={this.props.strokeColor}
-            strokeWidth={20}
-            strokeLinecap='round'
-            strokeLinejoin='round'
-            fill='none'
-          />
-        )
-
+      if (activeSubsection < letterDef[activeSection].length - 1) {
         this.setState({
-          points: [],
-          validStrokes: [...this.state.validStrokes, validStroke],
-          activeSection: activeSection + 1
+          activeSubsection: activeSubsection + 1,
         })
-      } else {
-        this.setState({ finished: true })
-        setTimeout(() => {
-          this.setState(this.initialState)
-        }, 1500)
       }
     }
   }
 
-  validateDistanceOnMove = (fingerPos, subsection) => {
+  /**
+   * Triggered when finger is removed from screen.
+   * If all subsections were finished, it checks if finger position is
+   * within tolerated distance of the end point of the active section.
+   * If it is within tolerated distance, a new path is created out of points
+   * and stored in validStrokes. This ensures that strokes of a finished sections
+   * aren't removed when an error happens.
+   */
+  onResponderRelease = e => {
+    const { activeSection, activeSubsection  } = this.state
+    const { letterDef } = this.props
+    const section = letterDef[activeSection]
+
+    let errors = null
+    if (activeSubsection === section.length - 1 && this.state.errors.releasedAfterError) {
+      const { points, tolerance} = this.state
+      const { scale } = this.props
+
+      const fingerPos = [e.nativeEvent.locationX, e.nativeEvent.locationY]
+      const lastSubsection = section[section.length - 1]
+
+      let end = null
+      if (lastSubsection.type === 'LINE') {
+        end = Maths.mult(lastSubsection.def[1], scale)
+      }
+      if (lastSubsection.type === 'CURVE') {
+        const {xt, yt, tMin, tMax} = lastSubsection.def
+        const curvePoints = Maths.funcToPoints(xt, yt, tMin, tMax)
+        end = Maths.mult(curvePoints[curvePoints.length - 1], scale)
+      }
+
+      const d = Maths.distance(fingerPos, end)
+      if (d > tolerance) {
+        // EndPoint would be animated here
+      } else {
+
+        if (activeSection < letterDef.length - 1) {
+          const validStroke = (
+            <Svg.Path
+              key={activeSection}
+              d={this.convertToPath(points)}
+              stroke={this.props.strokeColor}
+              strokeWidth={20}
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              fill='none'
+            />
+          )
+
+          errors = this.initialState.errors
+          this.setState({
+            validStrokes: [...this.state.validStrokes, validStroke],
+            activeSection: activeSection + 1
+          })
+        } else {
+          this.finishAndReset()
+        }
+      }
+    }
+
+    this.setState({
+      points: [],
+      oldFingerPos: [],
+      activeSubsection: 0,
+      errors: errors || {...this.state.errors, releasedAfterError: true }
+    })
+  }
+
+  /**
+   * Validates the distance of finger on screen to line(s) of given subsection.
+   *
+   * @param {number[]} oldFingerPos - Last position [x, y] of finger on screen
+   * @param {number[]} fingerPos - Current position [x, y] of finger on screen
+   * @param {Object} subsection - Definition of subsection
+   * @returns {string|null} true, if distance is within tolerance
+   */
+  validateFingerMovement = (oldFingerPos, fingerPos, subsection) => {
+    const moveDirection = Maths.sub(fingerPos, oldFingerPos)
     let points = []
+
     if (subsection.type === 'LINE') {
       points.push(subsection.def[0])
       points.push(subsection.def[1])
@@ -252,29 +263,42 @@ export default class Canvas extends Component {
       points = Array.from(Maths.funcToPoints(xt, yt, tMin, tMax))
     }
 
+    let error = null
     for (let i = 1; i < points.length; i++) {
       const p0 = Maths.mult(points[i - 1], this.props.scale)
       const p1 = Maths.mult(points[i], this.props.scale)
 
       const nearestPoint = Maths.nearestPointOnLine(fingerPos, p0, p1)
       if (!nearestPoint) {
+        error = 'tooFarFromLine'
         continue
       }
 
       const d = Maths.distance(fingerPos, nearestPoint)
       if (d > this.state.tolerance) {
+        error = 'tooFarFromLine'
         continue
       }
 
-      return true
+      const posDistance = Maths.distance(oldFingerPos, fingerPos)
+      if (posDistance > 10) {
+        const subsectionDirection = Maths.sub(points[i], points[i-1])
+        const angle = Maths.calcAngleBetweenVectors(moveDirection, subsectionDirection)
+        if (angle > 90) {
+          error = 'wrongDirection'
+          continue
+        }
+      }
+
+      return null
     }
-    return false
+    return error
   }
 
   /**
    * Sets correct image of color blob according to stroke color
    *
-   * @param {string} color - stroke color
+   * @param {string} [color] - stroke color
    */
   getColorBlob = color => {
     switch (color) {
@@ -297,7 +321,7 @@ export default class Canvas extends Component {
    * Creates a SVG Path string definition out of points.
    * Used to visualize finger movement.
    *
-   * @param {Array.<number[]>} - coordinates where screen was touched
+   * @param {Array.<number[]>} points - coordinates where screen was touched
    * @returns {String} definition for SVG Path
    */
   convertToPath = points => {
@@ -305,15 +329,46 @@ export default class Canvas extends Component {
 
     // create path for a circle, if only one point is stored
     if (points.length === 1) {
-      return `M${points[0][0] - 5} ${points[0][1]} a5 5 0 1,0 10,0 a5 5 0 1,0 -10,0`
+      return `M${points[0][0] - 5} ${points[0][1]} a3 3 0 1,0 6,0 a3 3 0 1,0 -6,0`
     }
 
     // create full path
     return points.map((value, index) => {
-      if (index === 0) return `M${points[0][0]} ${points[0][1]}`
+      if (index === 0) {
+        return `M${points[0][0]} ${points[0][1]}`
+      }
 
       return `L${value[0]} ${value[1]}`
     }).join(' ')
+  }
+
+  /**
+   * Displays an overview over errors that might have happened.
+   * Substitute for animations.
+   */
+  showErrors = () => {
+    const { errors } = this.state
+    return (
+      <View style={styles.textContainer}>
+        <Text style={{fontWeight: 'bold', fontSize: 16}}>Error Overview</Text>
+        <Text>Too Far From Line Counter: {errors.tooFarFromLine}</Text>
+        <Text>Going Wrong Direction Counter: {errors.wrongDirection}</Text>
+      </View>
+    )
+  }
+
+  /**
+   * Sets finished to true after 1s, so the RewardStar will be shown.
+   * Then resets the level to its initial state after 1.5s
+   */
+  finishAndReset = () => {
+    setTimeout(() => {
+      this.setState({ finished: true })
+      setTimeout(() => {
+        this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
+        this.setState(this.initialState)
+      }, 1500)
+    }, 1000)
   }
 
   render() {
@@ -354,7 +409,11 @@ export default class Canvas extends Component {
           }
           {finished && <RewardStar scale={scale}/>}
         </Svg>
-        <Button title='Reset' onPress={() => this.setState(this.initialState)}/>
+        {this.showErrors()}
+        <Button title='Reset' onPress={() => {
+          this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
+          this.setState(this.initialState)
+        }}/>
       </View>
     )
   }
@@ -368,6 +427,12 @@ const styles = StyleSheet.create({
   svgContainer: {
     flex: 1,
   },
+  textContainer: {
+    flex: 1,
+    position: 'absolute',
+    right: 10,
+    top: 20,
+  }
 })
 
 Canvas.propTypes = {
