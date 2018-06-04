@@ -28,7 +28,8 @@ export default class Canvas extends Component {
         pos: [],
         source: this.getColorBlob(props.color)
       },
-      finished: false
+      finished: false,
+      animations: ''
     }
 
     this.state = Object.assign({}, this.initialState)
@@ -95,11 +96,13 @@ export default class Canvas extends Component {
     if (d > tolerance) {
       // StartPoint would be animated here
       this.setState({
+        animations: 'StartPoint would be animated now',
         errors: {
           ...this.state.errors,
           releasedAfterError: false
         }
       })
+      setTimeout(() => this.setState({ animations: '' }), 1200)
       return
     }
     this.setState({
@@ -150,11 +153,14 @@ export default class Canvas extends Component {
         }
         if (error === 'wrongDirection' && count >= 3) {
           // all letter hints would be shown and animated in order here
+          this.setState({
+            animations: 'all letter hints would be shown and animated in order now'
+          })
+          setTimeout(() => this.setState({ animations: '' }), 1200)
         }
-        setTimeout(() => {
+        this.deleteLineTimer = setTimeout(() => {
           this.setState({
             points: [],
-            oldFingerPos: [],
             blob: { ...this.state.blob, show: false, pos: []}
           })
         }, 1000)
@@ -201,6 +207,8 @@ export default class Canvas extends Component {
     const released = this.state.errors.releasedAfterError
     const section = letterDef[activeSection]
 
+    clearTimeout(this.deleteLineTimer)
+
     const state = {
       points: [],
       oldFingerPos: [],
@@ -228,7 +236,11 @@ export default class Canvas extends Component {
 
       const d = Maths.distance(fingerPos, end)
       if (d > tolerance) {
-        // EndPoint would be animated here
+        // all letter hints would be shown and animated in order here
+        this.setState({
+          animations: 'all letter hints would be shown and animated in order now'
+        })
+        setTimeout(() => this.setState({ animations: '' }), 1200)
       } else {
         const validStroke = (
           <Svg.Path
@@ -272,7 +284,6 @@ export default class Canvas extends Component {
       points.push(subsection.def[0])
       points.push(subsection.def[1])
     }
-
     if (subsection.type === 'CURVE') {
       const { xt, yt, tMin, tMax } = subsection.def
       points = Array.from(Maths.funcToPoints(xt, yt, tMin, tMax))
@@ -361,13 +372,13 @@ export default class Canvas extends Component {
    * Displays an overview over errors that might have happened.
    * Substitute for animations.
    */
-  showErrors = () => {
-    const { errors } = this.state
+  showAnimationHints = () => {
     return (
       <View style={styles.textContainer}>
-        <Text style={{fontWeight: 'bold', fontSize: 16}}>Error Overview</Text>
-        <Text>Too Far From Line Counter: {errors.tooFarFromLine}</Text>
-        <Text>Going Wrong Direction Counter: {errors.wrongDirection}</Text>
+        <Text style={{fontWeight: 'bold', fontSize: 16}}>
+          Animation Overview
+        </Text>
+        <Text>{this.state.animations}</Text>
       </View>
     )
   }
@@ -426,7 +437,7 @@ export default class Canvas extends Component {
           }
           {finished && <RewardStar scale={scale}/>}
         </Svg>
-        {this.showErrors()}
+        {this.showAnimationHints()}
         <Button title='Reset' onPress={() => {
           this.initialState.blob.source = this.getColorBlob(strokeColor)
           this.setState(this.initialState)
@@ -449,6 +460,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 10,
     top: 20,
+    width: 200,
+
   }
 })
 
