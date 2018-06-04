@@ -5,8 +5,9 @@ import ColorPicker from './ColorPicker/ColorPicker'
 import LevelOne from './LevelOne'
 
 /**
- * This component functions as a container for letter drawing related elements and functionalities.
- * For now it holds the ColorPicker and LevelOne components and manages the data flow.
+ * This component functions as a container for letter drawing related elements
+ * and functionalities. For now it holds the ColorPicker and LevelOne
+ * components and manages the data flow.
  */
 export default class LetterScreen extends Component {
   constructor() {
@@ -17,7 +18,8 @@ export default class LetterScreen extends Component {
   }
 
   /**
-   * Store color received by the ColorPicker in state so it can be passed down to LevelOne.
+   * Store color received by the ColorPicker in state so it can be passed
+   * down to LevelOne.
    *
    * @param {string} color - color in hexadecimal presentation
    */

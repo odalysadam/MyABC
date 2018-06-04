@@ -12,8 +12,8 @@ export default class Canvas extends Component {
   constructor(props) {
     super(props)
     this.initialState = {
-      points: [],               // stores coordinates of finger position, inspired by rn-draw
-      validStrokes: [],         // stores lines drawn in a section, inspired by rn-draw
+      points: [],               // stores finger positions, inspired by rn-draw
+      validStrokes: [],         // stores path for old section, inspired by rn-draw
       activeSection: 0,
       activeSubsection: 0,
       tolerance: props.tolerance,
@@ -41,9 +41,9 @@ export default class Canvas extends Component {
   componentWillMount() {
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e, gestureState) => this.onResponderGrant(e, gestureState),
-      onPanResponderMove: (e, gestureState) => this.onResponderMove(e, gestureState),
-      onPanResponderRelease: (e, gestureState) => this.onResponderRelease(e, gestureState)
+      onPanResponderGrant: (e, gs) => this.onResponderGrant(e, gs),
+      onPanResponderMove: (e, gs) => this.onResponderMove(e, gs),
+      onPanResponderRelease: (e, gs) => this.onResponderRelease(e, gs)
     })
   }
 
@@ -55,7 +55,12 @@ export default class Canvas extends Component {
    */
   componentWillReceiveProps(nextProps) {
     if (this.props.strokeColor !== nextProps.strokeColor) {
-      this.setState({ blob: { ...this.state.blob, source: this.getColorBlob(nextProps.strokeColor) } })
+      this.setState({
+        blob: {
+          ...this.state.blob,
+          source: this.getColorBlob(nextProps.strokeColor)
+        }
+      })
     }
   }
 
@@ -89,10 +94,18 @@ export default class Canvas extends Component {
     const d = Maths.distance(fingerPos, start)
     if (d > tolerance) {
       // StartPoint would be animated here
-      this.setState({ errors: { ...this.state.errors, releasedAfterError: false } })
+      this.setState({
+        errors: {
+          ...this.state.errors,
+          releasedAfterError: false
+        }
+      })
       return
     }
-    this.setState({ points: [...points, fingerPos], oldFingerPos: fingerPos, errors: { ...this.state.errors } })
+    this.setState({
+      points: [...points, fingerPos],
+      oldFingerPos: fingerPos
+    })
   }
 
   /**
@@ -150,7 +163,8 @@ export default class Canvas extends Component {
     }
     this.setState({ oldFingerPos: fingerPos })
 
-    // validate if finger is hitting end point of subsection, if so switch to next subsection
+    // validate if finger is hitting end point of subsection,
+    // if so switch to next subsection
     let end = []
     if (subsection.type === 'LINE') {
       end = Maths.mult(subsection.def[1], scale)
@@ -178,16 +192,24 @@ export default class Canvas extends Component {
    * If all subsections were finished, it checks if finger position is
    * within tolerated distance of the end point of the active section.
    * If it is within tolerated distance, a new path is created out of points
-   * and stored in validStrokes. This ensures that strokes of a finished sections
-   * aren't removed when an error happens.
+   * and stored in validStrokes. This ensures that strokes of a finished
+   * sections aren't removed when an error happens.
    */
   onResponderRelease = e => {
     const { activeSection, activeSubsection  } = this.state
     const { letterDef } = this.props
+    const released = this.state.errors.releasedAfterError
     const section = letterDef[activeSection]
 
-    let errors = null
-    if (activeSubsection === section.length - 1 && this.state.errors.releasedAfterError) {
+    const state = {
+      points: [],
+      oldFingerPos: [],
+      activeSubsection: 0,
+      errors: {...this.state.errors, releasedAfterError: true }
+    }
+
+    // let errors = null
+    if (activeSubsection === section.length - 1 && released) {
       const { points, tolerance} = this.state
       const { scale } = this.props
 
@@ -208,37 +230,34 @@ export default class Canvas extends Component {
       if (d > tolerance) {
         // EndPoint would be animated here
       } else {
+        const validStroke = (
+          <Svg.Path
+            key={activeSection}
+            d={this.convertToPath(points)}
+            stroke={this.props.strokeColor}
+            strokeWidth={20}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
+          />
+        )
 
         if (activeSection < letterDef.length - 1) {
-          const validStroke = (
-            <Svg.Path
-              key={activeSection}
-              d={this.convertToPath(points)}
-              stroke={this.props.strokeColor}
-              strokeWidth={20}
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              fill='none'
-            />
-          )
-
-          errors = this.initialState.errors
-          this.setState({
-            validStrokes: [...this.state.validStrokes, validStroke],
-            activeSection: activeSection + 1
-          })
+          state.errors = this.initialState.errors
+          state.validStrokes = [...this.state.validStrokes, validStroke]
+          state.activeSection = activeSection + 1
+          // this.setState({
+          //   validStrokes: [...this.state.validStrokes, validStroke],
+          //   activeSection: activeSection + 1
+          // })
         } else {
           this.finishAndReset()
+          return
         }
       }
     }
 
-    this.setState({
-      points: [],
-      oldFingerPos: [],
-      activeSubsection: 0,
-      errors: errors || {...this.state.errors, releasedAfterError: true }
-    })
+    this.setState(state)
   }
 
   /**
@@ -372,7 +391,8 @@ export default class Canvas extends Component {
   }
 
   render() {
-    const { validStrokes, points, activeSection, tolerance, blob, finished } = this.state
+    const { validStrokes, points, activeSection,
+      activeSubsection, tolerance, blob, finished } = this.state
     const { letterDef, scale, strokeColor } = this.props
 
     return (
@@ -387,6 +407,7 @@ export default class Canvas extends Component {
           <LetterHints
             sections={letterDef}
             activeSection={activeSection}
+            activeSubsection={activeSubsection}
             strokeWidth={tolerance}
             scale={scale}
           />
@@ -411,7 +432,7 @@ export default class Canvas extends Component {
         </Svg>
         {this.showErrors()}
         <Button title='Reset' onPress={() => {
-          this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
+          this.initialState.blob.source = this.getColorBlob(strokeColor)
           this.setState(this.initialState)
         }}/>
       </View>

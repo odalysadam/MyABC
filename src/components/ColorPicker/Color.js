@@ -3,7 +3,8 @@ import { TouchableHighlight, Image } from 'react-native'
 import PropTypes from 'prop-types'
 
 /**
- * This component defines a Button displayed as a color splash to change the stroke color.
+ * This component defines a Button displayed as a color splash to change
+ * the stroke color.
  */
 export default class Color extends Component {
   constructor() {

@@ -8,8 +8,8 @@ import Arrow from './Arrow'
 import Maths from '../../util/Maths'
 
 /**
- * This component defines a container to show visualized letter hints like start point,
- * arrows for direction change and end point.
+ * This component defines a container to show visualized letter hints like
+ * start point, arrows for direction change and end point.
  */
 export default class LetterHints extends Component {
   constructor() {
@@ -50,7 +50,8 @@ export default class LetterHints extends Component {
    * React Lifecycle Method. Triggered when props change
    * Updates data for letter hints, if it has changed.
    *
-   * @param {Object} nextProps - Object of props this component is about to receive
+   * @param {Object} nextProps - Object of props this component is about
+   * to receive
    */
   componentWillReceiveProps(nextProps) {
     const newActiveSection = nextProps.sections[nextProps.activeSection]
@@ -58,7 +59,8 @@ export default class LetterHints extends Component {
     // check if position of start point has changed
     const oldStart = this.state.start
     const newStart = this.extractStartData(newActiveSection)
-    if (!Maths.equals(oldStart.p0, newStart.p0) || !Maths.equals(oldStart.p1, newStart.p1)) {
+    if (!Maths.equals(oldStart.p0, newStart.p0)
+      || !Maths.equals(oldStart.p1, newStart.p1)) {
       this.setState({
         start: newStart
       })
@@ -93,7 +95,8 @@ export default class LetterHints extends Component {
 
       let notEqualCount = 0
       for (let i = 0; i < newArrowPoints.length; i++) {
-        if (!Maths.equals(newArrowPoints[i].p0, oldArrowPoints[i].p0) || !Maths.equals(newArrowPoints[i].p1, oldArrowPoints[i].p1)) {
+        if (!Maths.equals(newArrowPoints[i].p0, oldArrowPoints[i].p0)
+          || !Maths.equals(newArrowPoints[i].p1, oldArrowPoints[i].p1)) {
           notEqualCount++
         }
       }
@@ -174,7 +177,10 @@ export default class LetterHints extends Component {
         const { xt, yt, tMin, tMax } = subsection.def
         const points = Maths.funcToPoints(xt, yt, tMin, tMax)
 
-        arrowPoints.push({ p0: points[0], p1: points[Math.floor(points.length / 10)] })
+        arrowPoints.push({
+          p0: points[0],
+          p1: points[Math.floor(points.length / 10)]
+        })
       }
     }
 
@@ -185,7 +191,8 @@ export default class LetterHints extends Component {
    * Determines if a section has more than one subsection and creates
    * an Arrow element for each subsection after the first one.
    *
-   * @returns {Array.<JSX>} an Arrow element for each subsection or direction change
+   * @returns {Array.<JSX>} an Arrow element for each subsection or
+   * direction change
    */
   renderSubsectionArrows = () => {
     const { arrowPoints } = this.state
@@ -203,14 +210,22 @@ export default class LetterHints extends Component {
   }
 
   render() {
-    const { scale, strokeWidth } = this.props
+    const { scale, strokeWidth, sections,
+      activeSection, activeSubsection } = this.props
     const { start, end, arrowPoints } = this.state
 
     return (
       <Svg.G>
-        <StartPoint p0={start.p0} p1={start.p1} scale={scale} strokeWidth={strokeWidth} />
+        <StartPoint
+          p0={start.p0}
+          p1={start.p1}
+          scale={scale}
+          strokeWidth={strokeWidth}
+        />
         {arrowPoints.length && this.renderSubsectionArrows()}
-        <EndPoint p={end} scale={scale} strokeWidth={strokeWidth} />
+        {activeSubsection === sections[activeSection].length - 1 &&
+          <EndPoint p={end} scale={scale} strokeWidth={strokeWidth}/>
+        }
       </Svg.G>
     )
   }

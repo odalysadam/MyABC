@@ -22,7 +22,8 @@ export default class ColorPointer extends Component {
    * React Lifecycle Method. Triggered when props change.
    * Makes the arrow visible by setting opacity to 1.
    *
-   * @param {Object} nextProps - Object of props this component is about to receive
+   * @param {Object} nextProps - Object of props this component is about
+   * to receive
    */
   componentWillReceiveProps(nextProps) {
     if (nextProps.show !== this.props.show) {
