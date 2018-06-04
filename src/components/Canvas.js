@@ -205,10 +205,10 @@ export default class Canvas extends Component {
       points: [],
       oldFingerPos: [],
       activeSubsection: 0,
+      blob: { ...this.state.blob, show: false, pos: []},
       errors: {...this.state.errors, releasedAfterError: true }
     }
 
-    // let errors = null
     if (activeSubsection === section.length - 1 && released) {
       const { points, tolerance} = this.state
       const { scale } = this.props
@@ -246,10 +246,6 @@ export default class Canvas extends Component {
           state.errors = this.initialState.errors
           state.validStrokes = [...this.state.validStrokes, validStroke]
           state.activeSection = activeSection + 1
-          // this.setState({
-          //   validStrokes: [...this.state.validStrokes, validStroke],
-          //   activeSection: activeSection + 1
-          // })
         } else {
           this.finishAndReset()
           return
@@ -377,7 +373,7 @@ export default class Canvas extends Component {
   }
 
   /**
-   * Sets finished to true after 1s, so the RewardStar will be shown.
+   * Sets finished to true after 0.75s, so the RewardStar will be shown.
    * Then resets the level to its initial state after 1.5s
    */
   finishAndReset = () => {
@@ -387,7 +383,7 @@ export default class Canvas extends Component {
         this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
         this.setState(this.initialState)
       }, 1500)
-    }, 1000)
+    }, 750)
   }
 
   render() {

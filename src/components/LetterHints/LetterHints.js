@@ -188,16 +188,26 @@ export default class LetterHints extends Component {
   }
 
   /**
-   * Determines if a section has more than one subsection and creates
-   * an Arrow element for each subsection after the first one.
+   * If a section has more than one subsection it creates an Arrow component
+   * for each subsection that is important for the active subsection.
    *
    * @returns {Array.<JSX>} an Arrow element for each subsection or
    * direction change
    */
   renderSubsectionArrows = () => {
     const { arrowPoints } = this.state
+    const { sections, activeSection, activeSubsection } = this.props
 
-    return arrowPoints.map((points, index) => {
+    let arrows = []
+    if (activeSubsection !== sections[activeSection].length - 1) {
+      for (let i = 0; i <= activeSubsection; i++) {
+        arrows.push(arrowPoints[i])
+      }
+    } else {
+      arrows = arrowPoints
+    }
+
+    return arrows.map((points, index) => {
       return (
         <Arrow
           key={index}

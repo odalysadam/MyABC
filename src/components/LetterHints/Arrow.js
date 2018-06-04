@@ -58,8 +58,8 @@ export default class Arrow extends Component {
       <Svg.G scale={scale}>
         <Svg.Path
           d={`M${p0[0]} ${p0[1]} l30 0 l-10 -7.5 m10 7.5 l-10 7.5`}
-          stroke='#ccc914'
-          strokeWidth={3}
+          stroke='#C2BF13'
+          strokeWidth={5}
           strokeLinecap='round'
           strokeLinejoin='round'
           fill='none'

@@ -79,6 +79,14 @@ export default letters = {
         visibleEnds: false,
         def: [
           [120, 350],
+          [120, 275]
+        ]
+      },
+      {
+        type: TYPE.LINE,
+        visibleEnds: false,
+        def: [
+          [120, 275],
           [120, 115]
         ]
       },
