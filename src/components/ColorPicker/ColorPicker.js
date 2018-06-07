@@ -22,7 +22,8 @@ export default class ColorPicker extends Component {
 
   /**
    * Called when the user taps on a color blob.
-   * Sends hex code of picked color received by child component back to LetterScreen.
+   * Sends hex code of picked color received by child component back
+   * to LetterScreen.
    *
    * @param {string} color - Color code in hex
    */

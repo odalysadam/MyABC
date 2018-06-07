@@ -5,8 +5,9 @@ import PropTypes from 'prop-types'
 import Maths from '../../util/Maths'
 
 /**
- * This component visualizes the start point through a circle with an arrow in it.
- * The arrow initially points to the right. It's rotated to show the direction the finger should move.
+ * This component visualizes the start point through a circle with an arrow
+ * in it. The arrow initially points to the right. It's rotated to show the
+ * direction the finger should move.
  */
 export default class StartPoint extends Component {
   constructor(props) {
@@ -32,14 +33,16 @@ export default class StartPoint extends Component {
    * React Lifecycle Method. Triggered when props change.
    * Sets new rotation angle, if lines and their direction have changed.
    *
-   * @param {Object} nextProps - Object of props this component is about to receive
+   * @param {Object} nextProps - Object of props this component is about
+   * to receive
    */
   componentWillReceiveProps(nextProps) {
     const { p0, p1 } = nextProps
     const d1 = Maths.sub(this.props.p1, this.props.p0)
     const d2 = Maths.sub(p1, p0)
 
-    if (!Maths.equals(p0, this.props.p0) || !Maths.equals(p1, this.props.p1) || !Maths.equals(d1, d2)) {
+    if (!Maths.equals(p0, this.props.p0) || !Maths.equals(p1, this.props.p1)
+      || !Maths.equals(d1, d2)) {
       const d = Maths.sub(p1, p0)
       const a = Maths.calcAngleBetweenVectors(d, [1, 0])
       const angle = d[1] > 0 ? a : -a
@@ -68,7 +71,9 @@ export default class StartPoint extends Component {
           strokeLinecap='round'
           strokeLinejoin='round'
           fill='none'
-          transform={{rotation: this.state.angle, originX: p0[0], originY: p0[1]}}
+          transform={{
+            rotation: this.state.angle, originX: p0[0], originY: p0[1]
+          }}
         />
       </Svg.G>
     )

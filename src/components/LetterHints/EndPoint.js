@@ -3,7 +3,8 @@ import { Svg } from 'expo'
 import PropTypes from 'prop-types'
 
 /**
- * This component visualizes the end point of a section through a circle with a square in it
+ * This component visualizes the end point of a section through a circle
+ * with a square in it
  */
 export default class EndPoint extends Component {
   render() {

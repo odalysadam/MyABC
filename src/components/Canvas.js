@@ -12,8 +12,8 @@ export default class Canvas extends Component {
   constructor(props) {
     super(props)
     this.initialState = {
-      points: [],               // stores coordinates of finger position, inspired by rn-draw
-      validStrokes: [],         // stores lines drawn in a section, inspired by rn-draw
+      points: [],               // stores finger positions, inspired by rn-draw
+      validStrokes: [],         // stores path for old section, inspired by rn-draw
       activeSection: 0,
       activeSubsection: 0,
       tolerance: props.tolerance,
@@ -28,7 +28,8 @@ export default class Canvas extends Component {
         pos: [],
         source: this.getColorBlob(props.color)
       },
-      finished: false
+      finished: false,
+      animations: ''
     }
 
     this.state = Object.assign({}, this.initialState)
@@ -41,9 +42,9 @@ export default class Canvas extends Component {
   componentWillMount() {
     this.panResponder = PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e, gestureState) => this.onResponderGrant(e, gestureState),
-      onPanResponderMove: (e, gestureState) => this.onResponderMove(e, gestureState),
-      onPanResponderRelease: (e, gestureState) => this.onResponderRelease(e, gestureState)
+      onPanResponderGrant: (e, gs) => this.onResponderGrant(e, gs),
+      onPanResponderMove: (e, gs) => this.onResponderMove(e, gs),
+      onPanResponderRelease: (e, gs) => this.onResponderRelease(e, gs)
     })
   }
 
@@ -55,7 +56,12 @@ export default class Canvas extends Component {
    */
   componentWillReceiveProps(nextProps) {
     if (this.props.strokeColor !== nextProps.strokeColor) {
-      this.setState({ blob: { ...this.state.blob, source: this.getColorBlob(nextProps.strokeColor) } })
+      this.setState({
+        blob: {
+          ...this.state.blob,
+          source: this.getColorBlob(nextProps.strokeColor)
+        }
+      })
     }
   }
 
@@ -89,10 +95,20 @@ export default class Canvas extends Component {
     const d = Maths.distance(fingerPos, start)
     if (d > tolerance) {
       // StartPoint would be animated here
-      this.setState({ errors: { ...this.state.errors, releasedAfterError: false } })
+      this.setState({
+        animations: 'StartPoint would be animated now',
+        errors: {
+          ...this.state.errors,
+          releasedAfterError: false
+        }
+      })
+      setTimeout(() => this.setState({ animations: '' }), 2200)
       return
     }
-    this.setState({ points: [...points, fingerPos], oldFingerPos: fingerPos, errors: { ...this.state.errors } })
+    this.setState({
+      points: [...points, fingerPos],
+      oldFingerPos: fingerPos
+    })
   }
 
   /**
@@ -137,11 +153,14 @@ export default class Canvas extends Component {
         }
         if (error === 'wrongDirection' && count >= 3) {
           // all letter hints would be shown and animated in order here
+          this.setState({
+            animations: 'all letter hints would be shown and animated in order now'
+          })
+          setTimeout(() => this.setState({ animations: '' }), 2200)
         }
-        setTimeout(() => {
+        this.deleteLineTimer = setTimeout(() => {
           this.setState({
             points: [],
-            oldFingerPos: [],
             blob: { ...this.state.blob, show: false, pos: []}
           })
         }, 1000)
@@ -150,7 +169,8 @@ export default class Canvas extends Component {
     }
     this.setState({ oldFingerPos: fingerPos })
 
-    // validate if finger is hitting end point of subsection, if so switch to next subsection
+    // validate if finger is hitting end point of subsection,
+    // if so switch to next subsection
     let end = []
     if (subsection.type === 'LINE') {
       end = Maths.mult(subsection.def[1], scale)
@@ -178,16 +198,26 @@ export default class Canvas extends Component {
    * If all subsections were finished, it checks if finger position is
    * within tolerated distance of the end point of the active section.
    * If it is within tolerated distance, a new path is created out of points
-   * and stored in validStrokes. This ensures that strokes of a finished sections
-   * aren't removed when an error happens.
+   * and stored in validStrokes. This ensures that strokes of a finished
+   * sections aren't removed when an error happens.
    */
   onResponderRelease = e => {
     const { activeSection, activeSubsection  } = this.state
     const { letterDef } = this.props
+    const released = this.state.errors.releasedAfterError
     const section = letterDef[activeSection]
 
-    let errors = null
-    if (activeSubsection === section.length - 1 && this.state.errors.releasedAfterError) {
+    clearTimeout(this.deleteLineTimer)
+
+    const state = {
+      points: [],
+      oldFingerPos: [],
+      activeSubsection: 0,
+      blob: { ...this.state.blob, show: false, pos: []},
+      errors: {...this.state.errors, releasedAfterError: true }
+    }
+
+    if (activeSubsection === section.length - 1 && released) {
       const { points, tolerance} = this.state
       const { scale } = this.props
 
@@ -206,39 +236,36 @@ export default class Canvas extends Component {
 
       const d = Maths.distance(fingerPos, end)
       if (d > tolerance) {
-        // EndPoint would be animated here
+        // all letter hints would be shown and animated in order here
+        this.setState({
+          animations: 'all letter hints would be shown and animated in order now'
+        })
+        setTimeout(() => this.setState({ animations: '' }), 2200)
       } else {
+        const validStroke = (
+          <Svg.Path
+            key={activeSection}
+            d={this.convertToPath(points)}
+            stroke={this.props.strokeColor}
+            strokeWidth={20}
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            fill='none'
+          />
+        )
 
         if (activeSection < letterDef.length - 1) {
-          const validStroke = (
-            <Svg.Path
-              key={activeSection}
-              d={this.convertToPath(points)}
-              stroke={this.props.strokeColor}
-              strokeWidth={20}
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              fill='none'
-            />
-          )
-
-          errors = this.initialState.errors
-          this.setState({
-            validStrokes: [...this.state.validStrokes, validStroke],
-            activeSection: activeSection + 1
-          })
+          state.errors = this.initialState.errors
+          state.validStrokes = [...this.state.validStrokes, validStroke]
+          state.activeSection = activeSection + 1
         } else {
           this.finishAndReset()
+          return
         }
       }
     }
 
-    this.setState({
-      points: [],
-      oldFingerPos: [],
-      activeSubsection: 0,
-      errors: errors || {...this.state.errors, releasedAfterError: true }
-    })
+    this.setState(state)
   }
 
   /**
@@ -257,7 +284,6 @@ export default class Canvas extends Component {
       points.push(subsection.def[0])
       points.push(subsection.def[1])
     }
-
     if (subsection.type === 'CURVE') {
       const { xt, yt, tMin, tMax } = subsection.def
       points = Array.from(Maths.funcToPoints(xt, yt, tMin, tMax))
@@ -296,28 +322,6 @@ export default class Canvas extends Component {
   }
 
   /**
-   * Sets correct image of color blob according to stroke color
-   *
-   * @param {string} [color] - stroke color
-   */
-  getColorBlob = color => {
-    switch (color) {
-      case '#ed1c24':
-        return require('../../assets/color_blobs/red_blob.png')
-      case '#39b54a':
-        return require('../../assets/color_blobs/green_blob.png')
-      case '#fbb03b':
-        return require('../../assets/color_blobs/orange_blob.png')
-      case '#29abe2':
-        return require('../../assets/color_blobs/blue_blob.png')
-      case '#b00088':
-        return require('../../assets/color_blobs/pink_blob.png')
-      default:
-        return require('../../assets/color_blobs/orange_blob.png')
-    }
-  }
-
-  /**
    * Creates a SVG Path string definition out of points.
    * Used to visualize finger movement.
    *
@@ -343,22 +347,7 @@ export default class Canvas extends Component {
   }
 
   /**
-   * Displays an overview over errors that might have happened.
-   * Substitute for animations.
-   */
-  showErrors = () => {
-    const { errors } = this.state
-    return (
-      <View style={styles.textContainer}>
-        <Text style={{fontWeight: 'bold', fontSize: 16}}>Error Overview</Text>
-        <Text>Too Far From Line Counter: {errors.tooFarFromLine}</Text>
-        <Text>Going Wrong Direction Counter: {errors.wrongDirection}</Text>
-      </View>
-    )
-  }
-
-  /**
-   * Sets finished to true after 1s, so the RewardStar will be shown.
+   * Sets finished to true after 0.75s, so the RewardStar will be shown.
    * Then resets the level to its initial state after 1.5s
    */
   finishAndReset = () => {
@@ -368,11 +357,49 @@ export default class Canvas extends Component {
         this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
         this.setState(this.initialState)
       }, 1500)
-    }, 1000)
+    }, 1200)
+  }
+
+  /**
+   * Sets correct image of color blob according to stroke color
+   *
+   * @param {string} [color] - stroke color
+   */
+  getColorBlob = color => {
+    switch (color) {
+      case '#ed1c24':
+        return require('../../assets/color_blobs/red_blob.png')
+      case '#39b54a':
+        return require('../../assets/color_blobs/green_blob.png')
+      case '#fbb03b':
+        return require('../../assets/color_blobs/orange_blob.png')
+      case '#29abe2':
+        return require('../../assets/color_blobs/blue_blob.png')
+      case '#b00088':
+        return require('../../assets/color_blobs/pink_blob.png')
+      default:
+        return require('../../assets/color_blobs/orange_blob.png')
+    }
+  }
+
+  /**
+   * Displays an overview over errors that might have happened.
+   * Substitute for animations.
+   */
+  showAnimationHints = () => {
+    return (
+      <View style={styles.textContainer}>
+        <Text style={{fontWeight: 'bold', fontSize: 16}}>
+          Animation Overview
+        </Text>
+        <Text>{this.state.animations}</Text>
+      </View>
+    )
   }
 
   render() {
-    const { validStrokes, points, activeSection, tolerance, blob, finished } = this.state
+    const { validStrokes, points, activeSection,
+      activeSubsection, tolerance, blob, finished } = this.state
     const { letterDef, scale, strokeColor } = this.props
 
     return (
@@ -387,6 +414,7 @@ export default class Canvas extends Component {
           <LetterHints
             sections={letterDef}
             activeSection={activeSection}
+            activeSubsection={activeSubsection}
             strokeWidth={tolerance}
             scale={scale}
           />
@@ -409,9 +437,9 @@ export default class Canvas extends Component {
           }
           {finished && <RewardStar scale={scale}/>}
         </Svg>
-        {this.showErrors()}
+        {this.showAnimationHints()}
         <Button title='Reset' onPress={() => {
-          this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
+          this.initialState.blob.source = this.getColorBlob(strokeColor)
           this.setState(this.initialState)
         }}/>
       </View>
@@ -432,6 +460,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 10,
     top: 20,
+    width: 200,
+
   }
 })
 
