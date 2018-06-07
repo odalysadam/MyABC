@@ -79,14 +79,6 @@ export default letters = {
         visibleEnds: false,
         def: [
           [120, 350],
-          [120, 275]
-        ]
-      },
-      {
-        type: TYPE.LINE,
-        visibleEnds: false,
-        def: [
-          [120, 275],
           [120, 115]
         ]
       },
@@ -97,8 +89,8 @@ export default letters = {
         def: {
           xt: '165 + 55 * -Math.cos(t * Math.PI)',  // circle function with center at x pos 165 and radius 55
           yt: '155 + 55 * -Math.sin(t * Math.PI)',  // circle function with center at y pos 155 and radius 55
-          tMin: 0.2,  // 0 would be a full circle
-          tMax: 1.8   // 2 would be a full circle
+          tMin: 0.175,  // 0 would be a full circle
+          tMax: 1.825   // 2 would be a full circle
         }
       }
     ]

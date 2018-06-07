@@ -1,2 +1,2 @@
 # MyABC
-Thesis project. Application for children to learn how to write letters
+Thesis project prototype. Application for children to learn how to write letters

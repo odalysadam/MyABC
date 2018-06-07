@@ -102,7 +102,7 @@ export default class Canvas extends Component {
           releasedAfterError: false
         }
       })
-      setTimeout(() => this.setState({ animations: '' }), 1200)
+      setTimeout(() => this.setState({ animations: '' }), 2200)
       return
     }
     this.setState({
@@ -156,7 +156,7 @@ export default class Canvas extends Component {
           this.setState({
             animations: 'all letter hints would be shown and animated in order now'
           })
-          setTimeout(() => this.setState({ animations: '' }), 1200)
+          setTimeout(() => this.setState({ animations: '' }), 2200)
         }
         this.deleteLineTimer = setTimeout(() => {
           this.setState({
@@ -240,7 +240,7 @@ export default class Canvas extends Component {
         this.setState({
           animations: 'all letter hints would be shown and animated in order now'
         })
-        setTimeout(() => this.setState({ animations: '' }), 1200)
+        setTimeout(() => this.setState({ animations: '' }), 2200)
       } else {
         const validStroke = (
           <Svg.Path
@@ -322,28 +322,6 @@ export default class Canvas extends Component {
   }
 
   /**
-   * Sets correct image of color blob according to stroke color
-   *
-   * @param {string} [color] - stroke color
-   */
-  getColorBlob = color => {
-    switch (color) {
-      case '#ed1c24':
-        return require('../../assets/color_blobs/red_blob.png')
-      case '#39b54a':
-        return require('../../assets/color_blobs/green_blob.png')
-      case '#fbb03b':
-        return require('../../assets/color_blobs/orange_blob.png')
-      case '#29abe2':
-        return require('../../assets/color_blobs/blue_blob.png')
-      case '#b00088':
-        return require('../../assets/color_blobs/pink_blob.png')
-      default:
-        return require('../../assets/color_blobs/orange_blob.png')
-    }
-  }
-
-  /**
    * Creates a SVG Path string definition out of points.
    * Used to visualize finger movement.
    *
@@ -369,6 +347,42 @@ export default class Canvas extends Component {
   }
 
   /**
+   * Sets finished to true after 0.75s, so the RewardStar will be shown.
+   * Then resets the level to its initial state after 1.5s
+   */
+  finishAndReset = () => {
+    setTimeout(() => {
+      this.setState({ finished: true })
+      setTimeout(() => {
+        this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
+        this.setState(this.initialState)
+      }, 1500)
+    }, 1200)
+  }
+
+  /**
+   * Sets correct image of color blob according to stroke color
+   *
+   * @param {string} [color] - stroke color
+   */
+  getColorBlob = color => {
+    switch (color) {
+      case '#ed1c24':
+        return require('../../assets/color_blobs/red_blob.png')
+      case '#39b54a':
+        return require('../../assets/color_blobs/green_blob.png')
+      case '#fbb03b':
+        return require('../../assets/color_blobs/orange_blob.png')
+      case '#29abe2':
+        return require('../../assets/color_blobs/blue_blob.png')
+      case '#b00088':
+        return require('../../assets/color_blobs/pink_blob.png')
+      default:
+        return require('../../assets/color_blobs/orange_blob.png')
+    }
+  }
+
+  /**
    * Displays an overview over errors that might have happened.
    * Substitute for animations.
    */
@@ -381,20 +395,6 @@ export default class Canvas extends Component {
         <Text>{this.state.animations}</Text>
       </View>
     )
-  }
-
-  /**
-   * Sets finished to true after 0.75s, so the RewardStar will be shown.
-   * Then resets the level to its initial state after 1.5s
-   */
-  finishAndReset = () => {
-    setTimeout(() => {
-      this.setState({ finished: true })
-      setTimeout(() => {
-        this.initialState.blob.source = this.getColorBlob(this.props.strokeColor)
-        this.setState(this.initialState)
-      }, 1500)
-    }, 750)
   }
 
   render() {

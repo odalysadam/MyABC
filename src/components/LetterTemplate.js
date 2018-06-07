@@ -46,6 +46,8 @@ export default class LetterTemplate extends Component {
    * with round linecap. Round linecap makes the section look longer, so there
    * was some unexpected behaviour where you got the error tooFarFromLine
    * although it looked like you were hitting the line.
+   *
+   * @param {number} strokeWidth - Stroke width for letter template
    */
   buildLetter = strokeWidth => {
     const sections = this.props.def
@@ -58,13 +60,7 @@ export default class LetterTemplate extends Component {
       // iterate through subsections and build path
       for (let j = 0; j < section.length; j++) {
         const subsection = section[j]
-        if (subsection.type === 'LINE') {
-          paths.push(this.buildLine(subsection, 'l'+i+'-'+j, strokeWidth))
-        }
-
-        if (subsection.type === 'CURVE') {
-          paths.push(this.buildCurve(subsection, 'l'+i+'-'+j, strokeWidth))
-        }
+        paths.push(this.buildPath(subsection, 'l'+i+'-'+j, strokeWidth))
       }
     }
 
@@ -72,44 +68,25 @@ export default class LetterTemplate extends Component {
   }
 
   /**
-   * Builds the string definition of a line for the SVG Path Object
+   * Builds a SVG Path Object for a subsection
    *
    * @param {Object} subsection - Object defining a subsection
    * @param {string} key - Unique key for SVG Path
    * @param {number} strokeWidth - Stroke width for SVG Path
    * @returns {string} String definition for SVG Path
    */
-  buildLine = (subsection, key, strokeWidth) => {
-    const p0 = subsection.def[0]
-    const p1 = subsection.def[1]
+  buildPath = (subsection, key, strokeWidth) => {
     const lineCap = subsection.visibleEnds ? 'round' : 'butt'
+    let points = []
 
-    return (
-      <Svg.Path
-        key={key}
-        d={`M${p0[0]} ${p0[1]} L${p1[0]} ${p1[1]}`}
-        stroke='#ffffff'
-        strokeWidth={strokeWidth}
-        strokeLinecap={lineCap}
-        strokeLinejoin='round'
-        fill='none'
-        scale={this.props.scale}
-      />
-    )
-  }
-
-  /**
-   * Builds the string definition of a curve for the SVG Path Object
-   *
-   * @param {Object} subsection - Object defining a subsection
-   * @param {string} key - Unique key for SVG Path
-   * @param {number} strokeWidth - Stroke width for SVG Path
-   * @returns {string} String definition for SVG Path
-   */
-  buildCurve = (subsection, key, strokeWidth) => {
-    const { xt, yt, tMin, tMax } = subsection.def
-    const points = Maths.funcToPoints(xt, yt, tMin, tMax)
-    const lineCap = subsection.visibleEnds ? 'round' : 'butt'
+    if (subsection.type === 'LINE') {
+      points.push(subsection.def[0])
+      points.push(subsection.def[1])
+    }
+    if (subsection.type === 'CURVE') {
+      const { xt, yt, tMin, tMax } = subsection.def
+      points = Array.from(Maths.funcToPoints(xt, yt, tMin, tMax))
+    }
 
     let path = `M${points[0][0]} ${points[0][1]}`
     for (let i = 1; i < points.length; i++) {
